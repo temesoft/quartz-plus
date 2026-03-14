@@ -26,6 +26,7 @@ import org.quartzplus.test.H2Configuration;
 import org.quartzplus.test.TestCoreConfigImport;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -313,7 +314,13 @@ public class SchedulerRestControllerTest {
 
     @BeforeAll
     public static void setUpOnce() throws Exception {
-        final var app = new SpringApplication(TestCoreConfigImport.class, QuartzPlusAutoConfiguration.class, org.springframework.boot.quartz.autoconfigure.QuartzAutoConfiguration.class, QuartzPlusFlywayConfiguration.class, TestConfig.class);
+        final var app = new SpringApplication(
+                TestCoreConfigImport.class,
+                QuartzPlusAutoConfiguration.class,
+                QuartzAutoConfiguration.class,
+                QuartzPlusFlywayConfiguration.class,
+                TestConfig.class
+        );
         final var embeddedPortRetriever = new EmbeddedPortRetriever(app);
         app.setDefaultProperties(H2Configuration.createQuartzConfigProperties());
         app.setBannerMode(Banner.Mode.OFF);

@@ -64,6 +64,7 @@ import java.util.Map;
 @Configuration
 @Import({
         QuartzPlusWebAdminConfiguration.class,
+        QuartzPlusFlywayConfiguration.class,
         SchedulerRestController.class
 })
 @PropertySource("quartz-plus-git.properties")

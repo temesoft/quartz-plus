@@ -499,8 +499,7 @@ public class QuartzPlusAutoConfigurationTest {
     @Import({
             TestCoreConfigImport.class,
             QuartzAutoConfiguration.class,
-            QuartzPlusAutoConfiguration.class,
-            QuartzPlusFlywayConfiguration.class
+            QuartzPlusAutoConfiguration.class
     })
     static class TestConfig {
 
