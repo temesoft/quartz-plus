@@ -38,7 +38,7 @@
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
         <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
-        <error-prone.version>2.31.0</error-prone.version> <!-- 2.31.0 is last version capable of jdk17 support -->
+        <error-prone.version>2.48.0</error-prone.version> <!-- 2.31.0 is last version capable of jdk17 support -->
 
         <guava.version>33.5.0-jre</guava.version>
         <swagger-annotations.version>2.2.44</swagger-annotations.version>
