@@ -1,0 +1,38 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-time view-header"></i> Triggers</h2>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th></th>
+            <th>Group</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Previous execution</th>
+            <th>Next execution</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="t in triggers">
+            <td><a href="#/trigger/{{t.trigger.group}}/{{t.trigger.name}}">View details</a></td>
+            <td>{{t.trigger.group}}</td>
+            <td>{{t.trigger.name}}</td>
+            <td>
+                <span data-ng-if="t.state == 'NONE'" class="label label-default">{{t.state}}</span>
+                <span data-ng-if="t.state == 'NORMAL'" class="label label-primary">{{t.state}}</span>
+                <span data-ng-if="t.state == 'COMPLETE'" class="label label-info">{{t.state}}</span>
+                <span data-ng-if="t.state == 'ERROR'" class="label label-danger">{{t.state}}</span>
+                <span data-ng-if="t.state == 'BLOCKED'" class="label label-primary">{{t.state}}</span>
+                <span data-ng-if="t.state == 'PAUSED'" class="label label-warning">{{t.state}}</span>
+            </td>
+            <td>
+                {{t.trigger.previousFireTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted"><br/>{{t.trigger.previousFireTime | moment: 'fromNow'}}</small></i>
+            </td>
+            <td>
+                {{t.trigger.nextFireTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted"><br/>{{t.trigger.nextFireTime | moment: 'fromNow'}}</small></i>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

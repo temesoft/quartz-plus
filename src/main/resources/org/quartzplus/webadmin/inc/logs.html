@@ -1,0 +1,121 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-list-alt view-header"></i> Execution logs</h2>
+<div class="table-responsive">
+
+    <div class="btn-actions-pane-right">
+        <div role="group" class="btn-group-sm btn-group m-1" aria-label="Page navigation" data-ng-if="logs.totalElements > logs.size">
+            <ul class="pagination m-3">
+                <li class="page-item">
+                    <a class="page-link btn btn-outline-secondary dropdown-toggle page-size-dropdown-button" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Page size {{pageSize}}
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="about-us">
+                        <li><a class="dropdown-item" data-ng-click="listLogs(10, 0)">10</a></li>
+                        <li><a class="dropdown-item" data-ng-click="listLogs(25, 0)">25</a></li>
+                        <li><a class="dropdown-item" data-ng-click="listLogs(100, 0)">100</a></li>
+                        <li><a class="dropdown-item" data-ng-click="listLogs(500, 0)">500</a></li>
+                    </ul>
+                </li>
+                <li class="page-item" style="visibility: hidden;">
+                    <a class="page-link"> &nbsp; &nbsp; &nbsp; </a>
+                </li>
+                <li class="page-item disabled" data-ng-if="logs.number == 0">
+                    <a class="page-link">Previous</a>
+                </li>
+                <li class="page-item cursor-pointer" data-ng-if="logs.number > 0">
+                    <a class="page-link black" data-ng-click="listLogs(logs.size, logs.number-1)">Previous</a>
+                </li>
+                <li class="page-item" data-ng-repeat="n in paginationRange(1, logs.totalPages, logs.number + 1)">
+                                    <span data-ng-if="logs.number + 1 == n" class="page-link page-link-selected">
+                                        <span>{{n}}</span>
+                                    </span>
+                    <a data-ng-if="logs.number + 1 != n" class="page-link cursor-pointer" data-ng-click="listLogs(logs.size, n-1)">{{n}}</a>
+                </li>
+                <li class="page-item disabled" data-ng-if="logs.number + 1 == logs.totalPages">
+                    <a class="page-link">Next</a>
+                </li>
+                <li class="page-item cursor-pointer black" data-ng-if="logs.number + 1 != logs.totalPages">
+                    <a class="page-link" data-ng-click="listLogs(logs.size, logs.number + 1)">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div>
+        <input type="text" placeholder="filter table"
+               class="page-link form-control search-query" data-ng-model="searchQuery" />
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th></th>
+            <th>Group</th>
+            <th>Trigger</th>
+            <th>Job</th>
+            <th>Data</th>
+            <th>Message</th>
+            <th>Finished</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="log in logs.content | filter: searchQuery">
+            <td><a href="#/log/{{log.id}}">View details</a></td>
+            <td>{{log.groupName}}</td>
+            <td>
+                <a href="#/trigger/{{log.groupName}}/{{log.triggerName}}">{{log.triggerName}}</a>
+            </td>
+            <td>
+                <a href="#/jobs?groupName={{log.groupName}}&jobName={{log.jobName}}">{{log.jobName}}</a>
+            </td>
+            <td>{{log.jsonData.length + log.stackTrace.length | number:0}} bytes</td>
+            <td data-ng-if="log.success"><span class="label label-success">Success</span></td>
+            <td data-ng-if="!log.success"><span class="label label-danger">Failure</span></td>
+            <td>
+                {{log.createTime| date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted"><br/>{{log.createTime| moment: 'fromNow'}}</small></i>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="btn-actions-pane-right">
+        <div role="group" class="btn-group-sm btn-group m-1" aria-label="Page navigation" data-ng-if="logs.totalElements > logs.size">
+            <ul class="pagination m-3">
+                <li class="page-item">
+                    <a class="page-link btn btn-outline-secondary dropdown-toggle page-size-dropdown-button" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Page size {{pageSize}}
+                        <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="about-us">
+                        <li><a class="dropdown-item" data-ng-click="listLogs(10, 0)">10</a></li>
+                        <li><a class="dropdown-item" data-ng-click="listLogs(25, 0)">25</a></li>
+                        <li><a class="dropdown-item" data-ng-click="listLogs(100, 0)">100</a></li>
+                        <li><a class="dropdown-item" data-ng-click="listLogs(500, 0)">500</a></li>
+                    </ul>
+                </li>
+                <li class="page-item" style="visibility: hidden;">
+                    <a class="page-link"> &nbsp; &nbsp; &nbsp; </a>
+                </li>
+                <li class="page-item disabled" data-ng-if="logs.number == 0">
+                    <a class="page-link">Previous</a>
+                </li>
+                <li class="page-item cursor-pointer" data-ng-if="logs.number > 0">
+                    <a class="page-link black" data-ng-click="listLogs(logs.size, logs.number-1)">Previous</a>
+                </li>
+                <li class="page-item" data-ng-repeat="n in paginationRange(1, logs.totalPages, logs.number + 1)">
+                                    <span data-ng-if="logs.number + 1 == n" class="page-link page-link-selected">
+                                        <span>{{n}}</span>
+                                    </span>
+                    <a data-ng-if="logs.number + 1 != n" class="page-link cursor-pointer" data-ng-click="listLogs(logs.size, n-1)">{{n}}</a>
+                </li>
+                <li class="page-item disabled" data-ng-if="logs.number + 1 == logs.totalPages">
+                    <a class="page-link">Next</a>
+                </li>
+                <li class="page-item cursor-pointer black" data-ng-if="logs.number + 1 != logs.totalPages">
+                    <a class="page-link" data-ng-click="listLogs(logs.size, logs.number + 1)">Next</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

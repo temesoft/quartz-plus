@@ -1,0 +1,71 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-info-sign view-header"></i> Scheduler information</h2>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <tbody>
+        <tr>
+            <td class="a-right">Scheduler name:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.schedulerName}}</td>
+            <td class="a-right">Quartz version:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.version}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Started:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.started}}</td>
+            <td class="a-right">QuartzPlus version:</td>
+            <td class="bold">{{scheduler.quartzPlusVersion}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Standby mode:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.inStandbyMode}}</td>
+            <td class="a-right">Scheduler class:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.schedulerClass}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Shutdown:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.shutdown}}</td>
+            <td class="a-right">Job store class:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.jobStoreClass}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Clustered mode:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.jobStoreClustered}}</td>
+            <td class="a-right">Thread pool class:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.threadPoolClass}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Table prefix:</td>
+            <td class="bold">{{scheduler.tablePrefix}}</td>
+            <td class="a-right">Thread pool size:</td>
+            <td class="bold">{{scheduler.schedulerMetaData.threadPoolSize}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Running since:</td>
+            <td class="bold">
+                {{scheduler.schedulerMetaData.runningSince | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted"><br/>{{scheduler.schedulerMetaData.runningSince | moment: 'fromNow'}}</small></i>
+            </td>
+            <td class="a-right">Last access:</td>
+            <td class="bold">
+                {{scheduler.serverTimestamp | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted"><br/>{{scheduler.serverTimestamp | moment: 'fromNow'}}</small></i>
+            </td>
+        </tr>
+        <tr>
+            <td class="a-right">Job execution log service class:</td>
+            <td class="bold" colspan="3">{{scheduler.jobExecutionLogServiceClass}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Instance ID:</td>
+            <td class="bold" colspan="3">{{scheduler.schedulerMetaData.schedulerInstanceId}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Job class list:</td><td colspan="3">
+            <span data-ng-repeat="job in scheduler.jobsCollection">
+                <li><a class="bold" href="#/jobs?instanceClass={{job}}">{{job}}</a></li>
+            </span>
+
+        </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

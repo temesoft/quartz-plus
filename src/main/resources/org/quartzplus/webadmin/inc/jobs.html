@@ -1,0 +1,25 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-file view-header"></i> Job classes</h2>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Group</th>
+            <th>Job name</th>
+            <th>Instance class / description</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="job in jobs">
+            <td>{{job.group}}</td>
+            <td>
+                {{job.name}}
+                <br/>
+                <a href="#/logs?instanceClass={{job.jobClass}}">logs</a>
+                |
+                <a href="#/triggers?jobName={{job.name}}&groupName={{job.group}}">triggers</a>
+            </td>
+            <td><code>{{job.jobClass}}</code><br/><small class="text-muted">{{job.description}}</small></td>
+        </tr>
+        </tbody>
+    </table>
+</div>

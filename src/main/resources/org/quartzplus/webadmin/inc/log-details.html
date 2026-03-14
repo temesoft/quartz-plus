@@ -1,0 +1,50 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-list-alt view-header"></i> Execution log details</h2>
+<div class="table-responsive">
+    <table class="table table-striped col-md-12">
+        <tbody>
+        <tr>
+            <td class="a-right">Group name:</td><td>{{log.groupName}}</td>
+            <td class="a-right">Log id:</td><td>{{log.id}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Job name:</td>
+
+            <td data-ng-if="log.triggerName.indexOf('MT_') != 0"><a href="#/jobs?groupName={{log.groupName}}&jobName={{log.jobName}}">{{log.jobName}}</a></td>
+            <td data-ng-if="log.triggerName.indexOf('MT_') == 0">{{log.jobName}}</td>
+
+            <td class="a-right">Trigger name:</td>
+            <td data-ng-if="log.triggerName.indexOf('MT_') != 0"><a href="#/trigger/{{log.groupName}}/{{log.triggerName}}">{{log.triggerName}}</a></td>
+            <td data-ng-if="log.triggerName.indexOf('MT_') == 0">{{log.triggerName}} &nbsp; <small class="text-muted">immediate trigger used</small></td>
+        </tr>
+        <tr>
+            <td class="a-right">Execution result:</td>
+            <td data-ng-if="log.success"><span class="label label-success">Success</span></td>
+            <td data-ng-if="!log.success"><span class="label label-danger">Failure</span></td>
+            <td class="a-right">Instance class:</td><td>{{log.instanceClass}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Message:</td>
+            <td data-ng-bind-html="log.errorMessage | shorten:40"></td>
+            <td class="a-right">Execution finished:</td>
+            <td>
+                {{log.createTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                &nbsp; <i><span class="ng-cloak text-muted">({{log.createTime | moment: 'fromNow'}})</span></i>
+            </td>
+
+        </tr>
+        <tr>
+            <td class="a-right">Priority:</td><td>{{log.priority}}</td>
+            <td class="a-right">Execution duration:</td><td>{{log.duration | number:0}} ms</td>
+        </tr>
+        <tr>
+            <td class="a-right">Execution instance:</td><td colspan="3"><code>{{log.fireInstanceId}}</code></td>
+        </tr>
+        <tr>
+            <td colspan="4">Execution data ({{log.jsonData.length | number:0}} bytes): <pre>{{log.jsonData}}</pre></td>
+        </tr>
+        <tr>
+            <td colspan="4">Execution output / stack trace ({{log.stackTrace.length | number:0}} bytes): <pre>{{log.stackTrace}}</pre></td>
+        </tr>
+        </tbody>
+    </table>
+</div>

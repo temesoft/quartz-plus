@@ -1,0 +1,87 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-time view-header"></i> Trigger details</h2>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <tbody>
+        <tr>
+            <td class="a-right">Group name:</td><td>{{triggerDetails.trigger.group}}</td>
+            <td class="a-right">Trigger name:</td><td>{{triggerDetails.trigger.name}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Job name:</td><td>{{triggerDetails.trigger.jobName}}</td>
+            <td class="a-right">Description:</td><td>{{triggerDetails.trigger.description}}</td>
+        </tr>
+        <tr>
+            <td class="a-right">Calendar used:</td><td>{{triggerDetails.trigger.calendarName | replaceAll:'org.quartzplus.calendar.':'' }}</td>
+            <td class="a-right">State:</td><td>
+                <span data-ng-if="triggerDetails.state == 'NONE'" class="label label-default">{{triggerDetails.state}}</span>
+                <span data-ng-if="triggerDetails.state == 'NORMAL'" class="label label-primary">{{triggerDetails.state}}</span>
+                <span data-ng-if="triggerDetails.state == 'COMPLETE'" class="label label-info">{{triggerDetails.state}}</span>
+                <span data-ng-if="triggerDetails.state == 'ERROR'" class="label label-danger">{{triggerDetails.state}}</span>
+                <span data-ng-if="triggerDetails.state == 'BLOCKED'" class="label label-primary">{{triggerDetails.state}}</span>
+                <span data-ng-if="triggerDetails.state == 'PAUSED'" class="label label-warning">{{triggerDetails.state}}</span>
+            </td>
+        </tr>
+        <tr data-ng-if="triggerDetails.trigger.cronExpression != null">
+            <td class="a-right">Cron expression:</td><td>{{triggerDetails.trigger.cronExpression}}</td>
+            <td class="a-right">Time zone:</td><td>{{triggerDetails.trigger.timeZone}}</td>
+        </tr>
+        <tr data-ng-if="triggerDetails.trigger.repeatCount != null">
+            <td class="a-right">Repeat count:</td>
+            <td>
+                {{triggerDetails.trigger.repeatCount}}
+                <span data-ng-if="triggerDetails.trigger.repeatCount < 0">(repeat indefinitely)</span>
+                <span data-ng-if="triggerDetails.trigger.repeatCount >= 0">times</span>
+            </td>
+            <td class="a-right">Repeat interval:</td><td>{{triggerDetails.trigger.repeatInterval | number:0}} ms</td>
+        </tr>
+        <tr>
+            <td class="a-right">Previous fire time:</td>
+            <td>
+                {{triggerDetails.trigger.previousFireTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted">{{triggerDetails.trigger.previousFireTime | moment: 'fromNow'}}</small></i>
+            </td>
+            <td class="a-right">Start time:</td>
+            <td>
+                {{triggerDetails.trigger.startTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted">{{triggerDetails.trigger.startTime | moment: 'fromNow'}}</small></i>
+            </td>
+        </tr>
+        <tr>
+            <td class="a-right">Next fire time:</td>
+            <td>
+                {{triggerDetails.trigger.nextFireTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted">{{triggerDetails.trigger.nextFireTime | moment: 'fromNow'}}</small></i>
+            </td>
+            <td class="a-right">End time:</td>
+            <td>
+                {{triggerDetails.trigger.endTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted">{{triggerDetails.trigger.endTime | moment: 'fromNow'}}</small></i>
+            </td>
+        </tr>
+        <tr>
+            <td class="a-right">Actions</td>
+            <td colspan="3">
+                <a class="btn btn-link btn-xs" href="#/logs?groupName={{triggerDetails.trigger.jobGroup}}&triggerName={{triggerDetails.trigger.name}}">
+                    <i class="glyphicon glyphicon-list-alt"></i>&nbsp;View logs</a>
+                |
+                <a class="btn btn-link btn-xs" href="#/jobs?groupName={{triggerDetails.trigger.jobGroup}}&jobName={{triggerDetails.trigger.jobName}}">
+                    <i class="glyphicon glyphicon-list-alt"></i>&nbsp;View job</a>
+                <span data-ng-if="triggerDetails.state != 'PAUSED'">
+                | <a class="btn btn-danger btn-xs pauseTriggerBtn" data-ng-click="pauseTrigger(triggerDetails.trigger.jobGroup, triggerDetails.trigger.name)">
+                    <i class="glyphicon glyphicon-pause"></i>&nbsp;pause</a>
+                </span>
+                <span data-ng-if="triggerDetails.state == 'PAUSED'">
+                | <a class="btn btn-primary btn-xs resumeTriggerBtn" data-ng-click="resumeTrigger(triggerDetails.trigger.jobGroup, triggerDetails.trigger.name)">
+                    <i class="glyphicon glyphicon-play"></i>&nbsp;resume</a>
+                </span>
+                |
+                <a class="btn btn-default btn-xs deleteTriggerBtn" data-ng-click="deleteTrigger(triggerDetails.trigger.jobGroup, triggerDetails.trigger.name)">
+                    <i class="glyphicon glyphicon-trash"></i>&nbsp;remove</a>
+                |
+                <a class="btn btn-info btn-xs executeTriggerBtn" data-ng-click="executeTrigger(triggerDetails.trigger.jobGroup, triggerDetails.trigger.name, triggerDetails.trigger.jobName)">
+                    <i class="glyphicon glyphicon-ok"></i>&nbsp;execute now</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

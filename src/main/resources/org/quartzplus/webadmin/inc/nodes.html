@@ -1,0 +1,29 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-hdd view-header"></i> Cluster nodes</h2>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Scheduler</th>
+            <th>Execution node instance</th>
+            <th>Last Check-in time</th>
+            <th>Check-in interval</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="node in nodes">
+            <td>{{node.schedulerName}}</td>
+            <td>
+                <span ng-bind-html="node.instanceName | shorten:40"></span>
+            </td>
+            <td>
+                {{node.lastCheckInTime | date : 'yyyy-MM-dd hh:mm:ss'}}
+                <i><small class="ng-cloak text-muted"><br/>{{node.lastCheckInTime | moment: 'fromNow'}}</small></i>
+            </td>
+            <td>{{node.checkInInterval | number:0}} ms</td>
+            <td data-ng-if="node.ready"><span class="label label-success">Ready</span></td>
+            <td data-ng-if="!node.ready"><span class="label label-danger">Not ready</span></td>
+        </tr>
+        </tbody>
+    </table>
+</div>

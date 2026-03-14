@@ -1,0 +1,27 @@
+<h2 class="sub-header"><i class="glyphicon glyphicon-scale view-header"></i> Instance metrics</h2>
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Group name</th>
+            <th>Job name</th>
+            <th class="center">Success</th>
+            <th class="center">Failure</th>
+            <th>Duration (mean)</th>
+            <th>Duration (max)</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="job in metrics.jobList track by $index">
+            <td>{{job.split('.')[0] | shorten:40}}</td>
+            <td>
+                <a href="#/jobs?groupName={{job.split('.')[0]}}&jobName={{job.split('.')[1]}}">{{job.split('.')[1]}}</a>
+            </td>
+            <td class="center"><span class="label label-success">{{metrics.meters['jobs.'+job+'.success'] | number:0}}</span></td>
+            <td class="center"><span class="label label-danger">{{metrics.meters['jobs.'+job+'.failure'] | number:0}}</span></td>
+            <td>{{metrics.timers['jobs.'+job+'.duration'][0] | number:0}} ms</td>
+            <td>{{metrics.timers['jobs.'+job+'.duration'][1] | number:0}} ms</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
