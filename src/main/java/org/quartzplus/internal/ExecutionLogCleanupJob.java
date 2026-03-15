@@ -68,7 +68,7 @@ public class ExecutionLogCleanupJob extends Job {
     }
 
     /**
-     * Executes the cleanup logic.
+     * Executes the cleanup logic for quartz job execution log entries
      * <p>
      * Calculates the cutoff timestamp based on the {@code daysAgo} parameter,
      * invokes the log service to delete records, and updates the execution context
@@ -79,13 +79,13 @@ public class ExecutionLogCleanupJob extends Job {
      */
     @Override
     public void executeJob(final JobExecutionContext jobExecutionContext) {
-        LOGGER.debug("Starting job execution cleanup job");
+        LOGGER.debug("Starting quartz job execution log cleanup job");
         final var stopwatch = Stopwatch.createStarted();
         final var cal = Calendar.getInstance(SimpleTimeZone.getDefault());
         if (jobExecutionContext.getMergedJobDataMap().containsKey(DAYS_AGO_KEY)) {
             daysAgo = jobExecutionContext.getMergedJobDataMap().getInt(DAYS_AGO_KEY);
         }
-        LOGGER.debug("Will try to clear records older than {} days ago", daysAgo);
+        LOGGER.debug("Will try to clear log records older than {} days ago", daysAgo);
         cal.add(Calendar.DAY_OF_YEAR, -daysAgo);
         try {
             final int cleared = jobExecutionLogService.clearJobExecutionLog(cal.toInstant());
@@ -96,7 +96,7 @@ public class ExecutionLogCleanupJob extends Job {
             }
             LOGGER.info("Finished in {}, cleared {} records", stopwatch.stop(), cleared);
         } catch (final Exception e) {
-            throw new RuntimeException("Problem cleaning job execution table: " + e.getMessage(), e);
+            throw new RuntimeException("Problem cleaning quartz job execution log table: " + e.getMessage(), e);
         }
     }
 }
