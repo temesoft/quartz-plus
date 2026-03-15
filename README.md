@@ -10,7 +10,7 @@
 
 **quartz-plus** is a Spring Boot auto-configuration library that enriches the
 standard [Quartz Scheduler](https://quartz-scheduler.org/) with declarative annotation-driven job registration,
-automatic execution logging, retry-on-error support, Micrometer metrics, and a built-in web administration UI — all
+automatic execution logging, retry-on-error support, Micrometer metrics, and a built-in web administration UI - all
 without boilerplate.
 
 ---
@@ -51,7 +51,7 @@ without boilerplate.
 
 | Feature                            | Description                                                               |
 |------------------------------------|---------------------------------------------------------------------------|
-| Annotation-driven job registration | Declare all job metadata with `@JobSpec` — no XML, no boilerplate         |
+| Annotation-driven job registration | Declare all job metadata with `@JobSpec` - no XML, no boilerplate         |
 | Cron and Simple triggers           | Both trigger types with static or dynamic (SpEL/properties) values        |
 | Retry on error                     | Configurable retry count and delay when `executeJob()` throws             |
 | Execution log                      | Per-run audit trail with duration, status, stack trace, and captured logs |
@@ -93,7 +93,7 @@ testImplementation 'io.github.temesoft:quartz-plus:1.0.1'
 ```
 
 
-No `@EnableScheduling` or extra `@Import` is required — quartz-plus registers itself through Spring Boot's
+No `@EnableScheduling` or extra `@Import` is required - quartz-plus registers itself through Spring Boot's
 auto-configuration mechanism.
 
 ---
@@ -187,12 +187,12 @@ public abstract void executeJob(JobExecutionContext ctx) throws Exception;
 
 The base class transparently wraps this method with:
 
-- **Log capture** — all SLF4J log messages at or above `getLoggerLevel()` (default: `INFO`) produced during the run are
+- **Log capture** - all SLF4J log messages at or above `getLoggerLevel()` (default: `INFO`) produced during the run are
   captured and stored in the execution log.
-- **Retry logic** — if `executeJob()` throws, the retry policy defined by `@OnErrorSpec` or the `OnErrorRepeatable`
+- **Retry logic** - if `executeJob()` throws, the retry policy defined by `@OnErrorSpec` or the `OnErrorRepeatable`
   interface is applied automatically.
-- **Metrics** — success counter, failure counter, and a duration timer are recorded via Micrometer.
-- **Lifecycle hooks** — `onSuccess(ctx)` and `onFailure(ctx, throwable)` are called after the final outcome.
+- **Metrics** - success counter, failure counter, and a duration timer are recorded via Micrometer.
+- **Lifecycle hooks** - `onSuccess(ctx)` and `onFailure(ctx, throwable)` are called after the final outcome.
 
 **Override the log capture level:**
 
@@ -246,7 +246,7 @@ It is the single source of truth for job configuration.
 | `triggerName`    | `String`        | *(required)*             | Unique name for the Quartz `Trigger`.                                      |
 | `jobDescription` | `String`        | `""`                     | Human-readable description stored in `JobDetail`.                          |
 | `triggerState`   | `@TriggerState` | enabled, unpaused        | Controls whether the trigger is registered and whether it starts paused.   |
-| `trigger`        | `@TriggerSpec`  | —                        | Defines the scheduling strategy (cron or simple).                          |
+| `trigger`        | `@TriggerSpec`  | -                        | Defines the scheduling strategy (cron or simple).                          |
 | `onError`        | `@OnErrorSpec`  | no retries               | Defines error retry behaviour.                                             |
 | `calendarClass`  | `String`        | `NoRestrictionsCalendar` | Fully qualified class name of a Quartz `Calendar` to exclude time windows. |
 
@@ -269,7 +269,7 @@ public JobsCollection reportingJobs() {
 }
 ```
 
-You can declare as many `JobsCollection` beans as you need — they are all collected at startup. Every class in the list
+You can declare as many `JobsCollection` beans as you need - they are all collected at startup. Every class in the list
 **must** be annotated with `@JobSpec` and extend `Job`.
 
 ---
@@ -384,9 +384,9 @@ triggerState =@TriggerState(
 
 | Attribute      | Type        | Default    | Description                                                                                                       |
 |----------------|-------------|------------|-------------------------------------------------------------------------------------------------------------------|
-| `enabled`      | `State`     | `ENABLED`  | `ENABLED` — trigger is registered and fires. `DISABLED` — trigger is not created at all.                          |
+| `enabled`      | `State`     | `ENABLED`  | `ENABLED` - trigger is registered and fires. `DISABLED` - trigger is not created at all.                          |
 | `enabledExp`   | `String`    | `""`       | SpEL/property override for `enabled`. Expects a `State` enum name.                                                |
-| `startType`    | `StartType` | `UNPAUSED` | `UNPAUSED` — trigger fires on schedule. `PAUSED` — trigger is registered but suspended; must be resumed manually. |
+| `startType`    | `StartType` | `UNPAUSED` | `UNPAUSED` - trigger fires on schedule. `PAUSED` - trigger is registered but suspended; must be resumed manually. |
 | `startTypeExp` | `String`    | `""`       | SpEL/property override for `startType`. Expects a `StartType` enum name.                                          |
 
 **Using `PAUSED` start type is useful for:**
@@ -650,14 +650,14 @@ The calendar class must implement `org.quartz.Calendar` and have a no-arg constr
 
 A built-in single-page administration interface is available at `/scheduler/admin` (default). It provides:
 
-- **Scheduler** — metadata, instance ID, cluster status
-- **Triggers** — list all triggers with state, next/previous fire times
-- **Jobs** — browse and inspect job details
-- **Logs** — paginated execution history with full log capture, duration, and stack traces
-- **Timeline** — graphical execution timeline
-- **Nodes** — cluster node visualization
-- **Metrics** — real-time success/failure/duration metrics
-- **Configuration** — view all active quartz-plus and Quartz properties (passwords are masked)
+- **Scheduler** - metadata, instance ID, cluster status
+- **Triggers** - list all triggers with state, next/previous fire times
+- **Jobs** - browse and inspect job details
+- **Logs** - paginated execution history with full log capture, duration, and stack traces
+- **Timeline** - graphical execution timeline
+- **Nodes** - cluster node visualization
+- **Metrics** - real-time success/failure/duration metrics
+- **Configuration** - view all active quartz-plus and Quartz properties (passwords are masked)
 
 Configure the UI:
 
@@ -782,7 +782,7 @@ These are standard Spring Boot properties that quartz-plus respects:
 |-------------------------------------------------------|-----------|----------|------------------------------------------------------------------------------------------------------|
 | `spring.quartz.job-store-type`                        | `enum`    | `memory` | `memory` for in-process scheduling; `jdbc` for database-backed persistent scheduling and clustering. |
 | `spring.quartz.wait-for-jobs-to-complete-on-shutdown` | `boolean` | `false`  | Wait for currently executing jobs to finish before the scheduler shuts down.                         |
-| `spring.quartz.properties.*`                          | `Map`     | —        | Pass-through to Quartz native properties (e.g., thread pool size, misfire threshold).                |
+| `spring.quartz.properties.*`                          | `Map`     | -        | Pass-through to Quartz native properties (e.g., thread pool size, misfire threshold).                |
 
 ### Native Quartz Properties (`org.quartz.*`)
 
