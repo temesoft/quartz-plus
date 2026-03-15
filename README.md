@@ -3,6 +3,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-17%2B-blue)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0%2B-brightgreen)](https://spring.io/projects/spring-boot)
+![Maven](https://img.shields.io/badge/build-Maven-brightgreen)
+![Status](https://img.shields.io/badge/status-active-success)
+[![Java CI](https://github.com/temesoft/quartz-plus/actions/workflows/main.yml/badge.svg)](https://github.com/temesoft/quartz-plus/actions/workflows/main.yml)
+
 
 **quartz-plus** is a Spring Boot auto-configuration library that enriches the
 standard [Quartz Scheduler](https://quartz-scheduler.org/) with declarative annotation-driven job registration,
@@ -71,16 +75,23 @@ without boilerplate.
 
 ## Installation
 
-Add the dependency to your Maven `pom.xml`:
+### Maven installation
 
 ```xml
 
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>4.2</version>
+    <version>1.0.1</version>
 </dependency>
 ```
+
+### Gradle installation
+
+```gradle
+testImplementation 'io.github.temesoft:quartz-plus:1.0.1'
+```
+
 
 No `@EnableScheduling` or extra `@Import` is required — quartz-plus registers itself through Spring Boot's
 auto-configuration mechanism.
