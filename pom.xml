@@ -7,7 +7,11 @@
     <version>1.0.1</version>
     <packaging>jar</packaging>
     <name>quartz-plus</name>
-    <description></description>
+    <description>quartz-plus is a Spring Boot auto-configuration library that enriches the
+        standard [Quartz Scheduler](https://quartz-scheduler.org/) with declarative annotation-driven job registration,
+        automatic execution logging, retry-on-error support, Micrometer metrics, and a built-in web administration
+        UI - all without boilerplate.
+    </description>
     <url>https://github.com/temesoft/quartz-plus</url>
 
     <licenses>
@@ -85,7 +89,8 @@
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <skipPoms>true</skipPoms>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <generateGitPropertiesFilename>target/classes/quartz-plus-git.properties</generateGitPropertiesFilename>
+                    <generateGitPropertiesFilename>target/classes/quartz-plus-git.properties
+                    </generateGitPropertiesFilename>
                     <failOnNoGitDirectory>false</failOnNoGitDirectory>
                     <abbrevLength>7</abbrevLength>
                     <skip>false</skip>
