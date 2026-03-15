@@ -3,8 +3,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Java](https://img.shields.io/badge/Java-17%2B-blue)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0%2B-brightgreen)](https://spring.io/projects/spring-boot)
-![Maven](https://img.shields.io/badge/build-Maven-brightgreen)
-![Status](https://img.shields.io/badge/status-active-success)
+[![Javadoc](https://javadoc.io/badge2/io.github.temesoft/quartz-plus/javadoc.svg)](https://javadoc.io/doc/io.github.temesoft/quartz-plus)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.temesoft/quartz-plus.svg)](https://central.sonatype.com/artifact/io.github.temesoft/quartz-plus)
 [![Java CI](https://github.com/temesoft/quartz-plus/actions/workflows/main.yml/badge.svg)](https://github.com/temesoft/quartz-plus/actions/workflows/main.yml)
 
 
