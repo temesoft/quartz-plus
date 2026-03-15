@@ -81,7 +81,7 @@ public class QuartzPlusWebAdminConfiguration {
             public void init(final FilterConfig filterConfig) {
                 if (quartzPlusProperties.getWebAdmin().isEnabled()) {
                     LOGGER.info(
-                            "Initializing web administration portal filter: {}",
+                            "Initializing quartz-plus web administration portal filter: {}",
                             quartzPlusProperties.getWebAdmin().getUri()
                     );
                 } else {

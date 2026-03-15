@@ -36,6 +36,8 @@ import org.quartzplus.exception.JobTriggerNotFoundException;
 import org.quartzplus.service.JobExecutionLogService;
 import org.quartzplus.service.JobsCollection;
 import org.quartzplus.service.QuartzExecutorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
@@ -75,6 +77,8 @@ import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 @RestController
 @RequestMapping("${quartz-plus.api-uri:/" + SchedulerRestController.SERVICE_URI + "}")
 public class SchedulerRestController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SchedulerRestController.class);
 
     public static final String SERVICE_URI = "scheduler";
 
@@ -125,6 +129,7 @@ public class SchedulerRestController {
         this.quartzPlusVersion = quartzPlusVersion;
         this.webUri = quartzPlusProperties.getWebAdmin().getUri();
         this.apiUri = quartzPlusProperties.getApiUri();
+        LOGGER.info("Initializing quartz-plus rest api: {}", quartzPlusProperties.getApiUri());
     }
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
