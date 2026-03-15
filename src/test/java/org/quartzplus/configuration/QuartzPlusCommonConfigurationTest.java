@@ -24,7 +24,7 @@ class QuartzPlusCommonConfigurationTest {
     private Environment environment;
 
     @Test
-    public void testGetConfigProperties() {
+    void testGetConfigProperties() {
         var props = QuartzPlusCommonConfiguration.getConfigProperties(environment);
         assertThat(props).containsKeys(
                 "spring.quartz.job-store-type",

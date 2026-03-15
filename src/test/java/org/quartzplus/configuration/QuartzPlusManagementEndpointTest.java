@@ -26,7 +26,7 @@ class QuartzPlusManagementEndpointTest {
     private ApplicationContext applicationContext;
 
     @Test
-    public void testSchedulerMetaDataReadOperation() throws SchedulerException {
+    void testSchedulerMetaDataReadOperation() throws SchedulerException {
         assertThat(applicationContext.getBeansOfType(QuartzPlusManagementEndpoint.class)).isNotEmpty();
         final var quartzManagementEndpoint = applicationContext.getBean(QuartzPlusManagementEndpoint.class);
         final var metadata = quartzManagementEndpoint.schedulerMetaDataReadOperation();

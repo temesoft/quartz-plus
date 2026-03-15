@@ -14,7 +14,9 @@ import java.util.List;
 @ConfigurationProperties(prefix = QuartzPlusProperties.PREFIX)
 public class QuartzPlusProperties {
 
-    /** The prefix used for all QuartzPlus related configuration properties. */
+    /**
+     * The prefix used for all QuartzPlus related configuration properties.
+     */
     public static final String PREFIX = "quartz-plus";
 
     private boolean dbMigration = true;
@@ -77,9 +79,13 @@ public class QuartzPlusProperties {
      * Enumeration of supported log storage types.
      */
     public enum JobExecutionLogType {
-        /** Logs are stored in a volatile internal list. */
+        /**
+         * Logs are stored in a volatile internal list.
+         */
         InMemory,
-        /** Logs are persisted to a database via JDBC. */
+        /**
+         * Logs are persisted to a database via JDBC.
+         */
         DataSource
     }
 

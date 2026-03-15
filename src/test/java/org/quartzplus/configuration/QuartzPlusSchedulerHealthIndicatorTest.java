@@ -26,7 +26,7 @@ class QuartzPlusSchedulerHealthIndicatorTest {
     private ApplicationContext applicationContext;
 
     @Test
-    public void testHealthIndicator() {
+    void testHealthIndicator() {
         final var healthIndicator = applicationContext.getBean(QuartzPlusSchedulerHealthIndicator.class);
         final var attributes = healthIndicator.health(true);
         assertThat(attributes).isNotNull();

@@ -13,7 +13,7 @@ class LogCaptureServiceImplTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(LogCaptureServiceImplTest.class);
 
     @Test
-    public void testEnableLogCapture() {
+    void testEnableLogCapture() {
         try (var logCaptureService = new LogCaptureServiceImpl(Level.DEBUG, LogCaptureServiceImplTest.class)) {
             final var testValue = RandomStringUtils.secure().nextAlphanumeric(20);
             LOGGER.debug(testValue);

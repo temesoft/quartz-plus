@@ -18,13 +18,13 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ExpressionProcessorTest {
+class ExpressionProcessorTest {
 
     private static ConfigurableApplicationContext ctx;
     private static ExpressionProcessor processor;
 
     @Test
-    public void testExpressionProcessor() {
+    void testExpressionProcessor() {
         processor = new ExpressionProcessorImpl(ctx, ctx.getBean(ConversionService.class));
         assertThat(processor.processExpression("${testing.test1}", String.class)).isEqualTo("foo");
         assertThat(processor.processExpression("${testing.test2}", Integer.class)).isEqualTo(123);
@@ -37,7 +37,7 @@ public class ExpressionProcessorTest {
     }
 
     @Test
-    public void testExceptionThrowing() {
+    void testExceptionThrowing() {
         assertThatThrownBy(() -> processor.processExpression("", String.class))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("Unable to process empty expression");
         assertThatThrownBy(() -> processor.processExpression("bla bla", String.class))
@@ -49,7 +49,7 @@ public class ExpressionProcessorTest {
     }
 
     @BeforeAll
-    public static void startup() {
+    static void startup() {
         final var app = new SpringApplication(TestCoreConfigImport.class, TestConfig.class);
         app.setBannerMode(Banner.Mode.OFF);
         app.setDefaultProperties(Map.of(
@@ -63,7 +63,7 @@ public class ExpressionProcessorTest {
     }
 
     @AfterAll
-    public static void shutdown() {
+    static void shutdown() {
         if (ctx != null) {
             ctx.close();
         }

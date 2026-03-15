@@ -47,7 +47,7 @@ import static org.assertj.core.api.Assertions.fail;
 @TestConfiguration
 @Import(InMemoryJobExecutionLogServiceImplTest.TestConfig.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class InMemoryJobExecutionLogServiceImplTest {
+class InMemoryJobExecutionLogServiceImplTest {
 
     private static final String GROUP_NAME = "TestGroup";
     private static final String TEST_JOB_SIMPLE_NAME = "TestJobSimple";
@@ -57,7 +57,7 @@ public class InMemoryJobExecutionLogServiceImplTest {
     private ConfigurableApplicationContext appContext;
 
     @Test
-    public void testStoreFunctionality() throws InterruptedException, SchedulerException {
+    void testStoreFunctionality() throws InterruptedException, SchedulerException {
         assertThat(appContext.getBeansOfType(Scheduler.class)).isNotEmpty();
         final var scheduler = appContext.getBean(Scheduler.class);
         assertThat(scheduler.isStarted()).isTrue();
@@ -96,7 +96,7 @@ public class InMemoryJobExecutionLogServiceImplTest {
     }
 
     @Test
-    public void testMultiThread() {
+    void testMultiThread() {
         final var jobExecutionLogService = appContext.getBean(JobExecutionLogService.class);
         final var numberOfThreads = 1_000;
         final var listOfStartedThreads = IntStream.range(0, numberOfThreads)
@@ -150,7 +150,7 @@ public class InMemoryJobExecutionLogServiceImplTest {
     }
 
     @AfterEach
-    public void clearEntries() {
+    void clearEntries() {
         final var jobExecutionLogService = appContext.getBean(JobExecutionLogService.class);
         jobExecutionLogService.clearJobExecutionLog(Instant.now());
     }

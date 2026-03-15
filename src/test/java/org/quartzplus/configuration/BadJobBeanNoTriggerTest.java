@@ -10,7 +10,6 @@ import org.quartzplus.annotation.TriggerSpec;
 import org.quartzplus.annotation.TriggerState;
 import org.quartzplus.exception.JobServiceException;
 import org.quartzplus.service.JobsCollection;
-import org.quartzplus.test.H2Configuration;
 import org.quartzplus.test.TestCoreConfigImport;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
@@ -30,7 +29,7 @@ public class BadJobBeanNoTriggerTest {
     private SpringApplication app;
 
     @Bean
-    public JobsCollection jobsCollection() {
+    JobsCollection jobsCollection() {
         return () -> List.of(TestJob.class);
     }
 
@@ -39,7 +38,7 @@ public class BadJobBeanNoTriggerTest {
      * {@link org.quartzplus.SimpleTriggerable} or {@link org.quartzplus.CronTriggerable}
      */
     @Test
-    public void testBadJobBeanNoTrigger() {
+    void testBadJobBeanNoTrigger() {
         assertThatThrownBy(() -> {
             setup();
             app.run();
@@ -58,7 +57,6 @@ public class BadJobBeanNoTriggerTest {
                 QuartzAutoConfiguration.class,
                 BadJobBeanNoTriggerTest.class
         );
-        app.setDefaultProperties(H2Configuration.createQuartzConfigProperties());
         app.setBannerMode(Banner.Mode.OFF);
     }
 

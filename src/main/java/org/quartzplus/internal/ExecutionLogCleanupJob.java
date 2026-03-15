@@ -96,7 +96,7 @@ public class ExecutionLogCleanupJob extends Job {
             }
             LOGGER.info("Finished in {}, cleared {} records", stopwatch.stop(), cleared);
         } catch (final Exception e) {
-            throw new RuntimeException("Problem cleaning...");
+            throw new RuntimeException("Problem cleaning job execution table: " + e.getMessage(), e);
         }
     }
 }

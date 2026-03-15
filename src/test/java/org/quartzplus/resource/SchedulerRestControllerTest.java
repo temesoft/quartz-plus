@@ -22,7 +22,6 @@ import org.quartzplus.configuration.QuartzPlusAutoConfiguration;
 import org.quartzplus.configuration.QuartzPlusFlywayConfiguration;
 import org.quartzplus.service.JobsCollection;
 import org.quartzplus.test.EmbeddedPortRetriever;
-import org.quartzplus.test.H2Configuration;
 import org.quartzplus.test.TestCoreConfigImport;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
@@ -49,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @SuppressWarnings("unchecked")
-public class SchedulerRestControllerTest {
+class SchedulerRestControllerTest {
 
     private static final String GROUP_NAME = "TestGroup";
     private static final String TEST_JOB_TRIGGER = "SchedulerRestControllerTest_TestJobTrigger";
@@ -70,7 +69,7 @@ public class SchedulerRestControllerTest {
     private static int port = -1;
 
     @Test
-    public void testSchedulerMetadata() {
+    void testSchedulerMetadata() {
         final var resultMap = (Map<String, Object>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/", Map.class);
         assertThat(resultMap).isNotNull();
         assertThat(((Map<String, Object>) resultMap.get("schedulerMetaData")).get("started")).isEqualTo(Boolean.TRUE);
@@ -79,13 +78,13 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testGroupsList() {
+    void testGroupsList() {
         assertThat((List<String>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/groups", List.class))
                 .contains(GROUP_NAME);
     }
 
     @Test
-    public void testExecutionLog() {
+    void testExecutionLog() {
         var resultPageMap = (Map<String, Object>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/log", Map.class);
         assertThat(resultPageMap).isNotNull();
         var resultList = (List<Object>) resultPageMap.get("content");
@@ -119,13 +118,13 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testExecutionLogBadEntity() {
+    void testExecutionLogBadEntity() {
         assertThat(restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/log?id=BAD-ID-NOT-FOUND", String.class))
                 .isNull();
     }
 
     @Test
-    public void testQuartzNodes() throws SchedulerException {
+    void testQuartzNodes() throws SchedulerException {
         if (scheduler.getMetaData().isJobStoreClustered()) {
             assertThat(restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/nodes", List.class)).isNotNull().isNotEmpty();
         } else {
@@ -134,7 +133,7 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testTriggerJob() {
+    void testTriggerJob() {
         final var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         final var request = new HttpEntity<>("{\"date\": \"2010-01-01 01:01:01\"}", headers);
@@ -144,7 +143,7 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testCreateJob() throws SchedulerException {
+    void testCreateJob() throws SchedulerException {
         final var jobName = RandomStringUtils.secure().nextAlphabetic(10);
         final var groupName = RandomStringUtils.secure().nextAlphabetic(10);
         final var triggerName = RandomStringUtils.secure().nextAlphabetic(10);
@@ -197,7 +196,7 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testTriggerJobBadJson() {
+    void testTriggerJobBadJson() {
         final var response = restTemplate.postForEntity(URL_PREFIX + port + SCHEDULER_URI + "/" + GROUP_NAME + "/jobs/" + TEST_JOB_NAME + "/trigger/",
                 "{this-is-not-json}", Map.class);
         assertThat(response).isNotNull();
@@ -205,14 +204,14 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testTriggerJobBadGroup() {
+    void testTriggerJobBadGroup() {
         final var response = restTemplate.postForEntity(URL_PREFIX + port + SCHEDULER_URI + "/BAD_GROUP_NAME" + "/jobs/" + "BAD_JOB_NAME/trigger", "", Map.class);
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(NOT_FOUND);
     }
 
     @Test
-    public void testPauseResumeJob() {
+    void testPauseResumeJob() {
         assertThat(restTemplate.postForObject(URL_PREFIX + port + SCHEDULER_URI + "/trigger/pause?groupName=" + GROUP_NAME + "&triggerName=" + TEST_JOB_TRIGGER, "", Map.class))
                 .isNotNull().isNotEmpty();
         assertThat(restTemplate.postForObject(URL_PREFIX + port + SCHEDULER_URI + "/trigger/resume?groupName=" + GROUP_NAME + "&triggerName=" + TEST_JOB_TRIGGER, "", Map.class))
@@ -220,28 +219,28 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testPauseTriggerNotFound() {
+    void testPauseTriggerNotFound() {
         final var response = restTemplate.postForEntity(URL_PREFIX + port + SCHEDULER_URI + "/" + GROUP_NAME + "/triggers/" + "trigger-does-not-exist" + "/pause", "", Map.class);
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(NOT_FOUND);
     }
 
     @Test
-    public void testResumeTriggerBadState() {
+    void testResumeTriggerBadState() {
         final var response = restTemplate.postForEntity(URL_PREFIX + port + SCHEDULER_URI + "/" + GROUP_NAME + "/triggers/" + TEST_JOB_TRIGGER + "/resume", "", Map.class);
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(NOT_FOUND);
     }
 
     @Test
-    public void testResumeTriggerNotFound() {
+    void testResumeTriggerNotFound() {
         final var response = restTemplate.postForEntity(URL_PREFIX + port + SCHEDULER_URI + "/" + GROUP_NAME + "/triggers/" + "trigger-does-not-exist" + "/resume", "", Map.class);
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(NOT_FOUND);
     }
 
     @Test
-    public void testTriggerDetails() {
+    void testTriggerDetails() {
         final Map<String, Object> resultMap = restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/trigger?groupName=" + GROUP_NAME + "&triggerName=" + TEST_JOB_TRIGGER, Map.class);
         assertThat(resultMap).isNotNull().isNotEmpty();
         assertThat(TEST_JOB_TRIGGER).isEqualTo(((Map<String, Object>) resultMap.get("trigger")).get("name"));
@@ -251,18 +250,18 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testTriggerDetailsError() {
+    void testTriggerDetailsError() {
         assertThat(restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/" + "group-does-not-exist" + "/triggers/" + TEST_JOB_TRIGGER, String.class))
                 .contains("404", "Not Found");
     }
 
     @Test
-    public void testDeleteTrigger() {
+    void testDeleteTrigger() {
         restTemplate.delete(URL_PREFIX + port + SCHEDULER_URI + "/" + GROUP_NAME + "/triggers/" + TEST_JOB_TRIGGER_REMOVABLE, Map.class);
     }
 
     @Test
-    public void testDeleteTriggerError() {
+    void testDeleteTriggerError() {
         final var uri = URL_PREFIX + port + SCHEDULER_URI + "/group-does-not-exist" + "/triggers/" + TEST_JOB_TRIGGER;
         final var response = restTemplate.exchange(
                 uri,
@@ -275,7 +274,7 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testTriggerList() {
+    void testTriggerList() {
         final var resultList = restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/triggers?groupName=" + GROUP_NAME, ArrayList.class);
         assertThat(resultList).isNotNull().isNotEmpty();
         final var triggers = List.of(
@@ -287,14 +286,14 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testGetMetrics() {
+    void testGetMetrics() {
         assertThat(restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/metrics", Map.class))
                 .isNotNull()
                 .isNotEmpty();
     }
 
     @Test
-    public void testJobList() {
+    void testJobList() {
         final var resultList = restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/jobs?groupName=" + GROUP_NAME, ArrayList.class);
         assertThat(resultList).isNotNull().isNotEmpty();
         final var triggers = List.of(
@@ -306,14 +305,14 @@ public class SchedulerRestControllerTest {
     }
 
     @Test
-    public void testJobListError() {
+    void testJobListError() {
         final var response = restTemplate.getForEntity(URL_PREFIX + port + SCHEDULER_URI + "/BAD_GROUP_NAME" + "/jobs", String.class);
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(NOT_FOUND);
     }
 
     @BeforeAll
-    public static void setUpOnce() throws Exception {
+    static void setUpOnce() throws Exception {
         final var app = new SpringApplication(
                 TestCoreConfigImport.class,
                 QuartzPlusAutoConfiguration.class,
@@ -322,7 +321,6 @@ public class SchedulerRestControllerTest {
                 TestConfig.class
         );
         final var embeddedPortRetriever = new EmbeddedPortRetriever(app);
-        app.setDefaultProperties(H2Configuration.createQuartzConfigProperties());
         app.setBannerMode(Banner.Mode.OFF);
         appContext = app.run();
         port = embeddedPortRetriever.getRetrievedPort();
@@ -332,7 +330,7 @@ public class SchedulerRestControllerTest {
     }
 
     @AfterAll
-    public static void tearDownOnce() throws Exception {
+    static void tearDownOnce() throws Exception {
         if (scheduler != null) {
             scheduler.unscheduleJob(new TriggerKey(TEST_JOB_TRIGGER, GROUP_NAME));
             scheduler.shutdown(false);

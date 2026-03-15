@@ -4,10 +4,10 @@ import io.github.temesoft.testpojo.TestPojo;
 import org.junit.jupiter.api.Test;
 import org.quartzplus.domain.JobExecutionLog;
 
-public class PojoTest {
+class PojoTest {
 
     @Test
-    public void testAllDomainModels() {
+    void testAllDomainModels() {
         TestPojo.processPackage(JobExecutionLog.class.getPackageName())
                 .testAll();
     }

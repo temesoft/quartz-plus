@@ -32,8 +32,7 @@ import org.springframework.test.annotation.DirtiesContext;
         PropertyPlaceholderAutoConfiguration.class,
         TomcatServletWebServerAutoConfiguration.class,
         TransactionAutoConfiguration.class,
-        WebMvcAutoConfiguration.class,
-        H2Configuration.class,
+        WebMvcAutoConfiguration.class
 })
 public class TestCoreConfigImport {
 }

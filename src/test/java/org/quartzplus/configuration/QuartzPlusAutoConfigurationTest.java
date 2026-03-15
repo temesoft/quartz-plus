@@ -29,7 +29,6 @@ import org.quartzplus.service.DataSourceJobExecutionLogServiceImpl;
 import org.quartzplus.service.JobExecutionLogService;
 import org.quartzplus.service.JobsCollection;
 import org.quartzplus.service.QuartzExecutorService;
-import org.quartzplus.test.H2Configuration;
 import org.quartzplus.test.TestCoreConfigImport;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
@@ -57,7 +56,7 @@ import static org.awaitility.Awaitility.await;
 import static org.springframework.util.Assert.isTrue;
 import static org.springframework.util.Assert.notNull;
 
-public class QuartzPlusAutoConfigurationTest {
+class QuartzPlusAutoConfigurationTest {
 
     private static final String GROUP_NAME = "TestGroup";
     private static final String TEST_WEEKDAYS_JOB_TRIGGER = "QuartzClusteredConfigurationTest_TestWeekdayJobTrigger";
@@ -83,7 +82,7 @@ public class QuartzPlusAutoConfigurationTest {
     private static SpringApplication app;
 
     @Test
-    public void testMetrics() {
+    void testMetrics() {
         Uninterruptibles.sleepUninterruptibly(Duration.ofSeconds(5));
         assertThat(meterRegistry).isNotNull();
         final var failureMeter = meterRegistry.get(JobMetricTypeEnum.FAILURE.getMetricName(GROUP_NAME, FAILING_JOB_NAME));
@@ -98,14 +97,14 @@ public class QuartzPlusAutoConfigurationTest {
     }
 
     @Test
-    public void testQuartScheduler() throws SchedulerException {
+    void testQuartScheduler() throws SchedulerException {
         notNull(scheduler, "Quartz scheduler should not be null");
         isTrue(scheduler.isStarted(), "Quartz scheduler should be started by now");
         isTrue(!scheduler.isInStandbyMode(), "Quartz scheduler should not be in a standby mode");
     }
 
     @Test
-    public void testTriggerTimeZone() throws SchedulerException {
+    void testTriggerTimeZone() throws SchedulerException {
         final var trigger = scheduler.getTrigger(new TriggerKey(TEST_WEEKDAYS_JOB_TRIGGER, GROUP_NAME));
         notNull(trigger, "Trigger for test weekdays job is should not be null");
         isTrue(trigger instanceof CronTrigger, "Trigger returned should be cron trigger");
@@ -115,14 +114,14 @@ public class QuartzPlusAutoConfigurationTest {
     }
 
     @Test
-    public void testCalendarSelection() throws SchedulerException {
+    void testCalendarSelection() throws SchedulerException {
         final var trigger = scheduler.getTrigger(new TriggerKey(TEST_WEEKDAYS_JOB_TRIGGER, GROUP_NAME));
         notNull(trigger, "Trigger for test weekdays job is should not be null");
         isTrue(WeeklyCalendar.class.getName().equals(trigger.getCalendarName()), "The job should have NoWeekendsCalendar selected as trigger calendar");
     }
 
     @Test
-    public void testStartedPausedTrigger() throws SchedulerException {
+    void testStartedPausedTrigger() throws SchedulerException {
         final var triggerKey = new TriggerKey(TEST_JOB_PAUSED_TRIGGER, GROUP_NAME);
         Trigger.TriggerState state = scheduler.getTriggerState(triggerKey);
         isTrue(state == Trigger.TriggerState.PAUSED, "The trigger should have started in paused state");
@@ -132,7 +131,7 @@ public class QuartzPlusAutoConfigurationTest {
     }
 
     @Test
-    public void testCalendarWeekdaysOnly() throws SchedulerException {
+    void testCalendarWeekdaysOnly() throws SchedulerException {
         final var calName = WeeklyCalendar.class.getName();
         final Calendar calendar = scheduler.getCalendar(calName);
         notNull(calendar, "Calendar " + calName + " should not be null");
@@ -159,7 +158,7 @@ public class QuartzPlusAutoConfigurationTest {
     }
 
     @Test
-    public void testJobExecutions() {
+    void testJobExecutions() {
         notNull(quartzExecutorService, "QuartzExecutorService bean should not be null");
         isTrue(TestJob.successCountDownLatch.getCount() == 0, "Quartz scheduler should have already executed the TestJob");
     }
@@ -168,7 +167,7 @@ public class QuartzPlusAutoConfigurationTest {
      * This test case tries to re-register job classes (cron and simple trigger) during runtime after the scheduler has been initialized with {@link JobsCollection}
      */
     @Test
-    public void testReRegisterJobs() throws JobServiceException, SchedulerException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    void testReRegisterJobs() throws JobServiceException, SchedulerException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         quartzExecutorService.registerJobClass(scheduler, TestJob.class, TestJob.class.getAnnotation(JobSpec.class));
         quartzExecutorService.registerJobClass(scheduler, TestJobCron.class, TestJobCron.class.getAnnotation(JobSpec.class));
         final var trigger = (SimpleTrigger) scheduler.getTrigger(new TriggerKey(TEST_JOB_SIMPLE_TRIGGER, GROUP_NAME));
@@ -181,7 +180,7 @@ public class QuartzPlusAutoConfigurationTest {
      * This test case tries to re-register / reset changed job classes (cron and simple trigger) during runtime after the scheduler has been initialized with {@link JobsCollection}
      */
     @Test
-    public void testReRegisterJobsSimpleReset() throws JobServiceException, SchedulerException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    void testReRegisterJobsSimpleReset() throws JobServiceException, SchedulerException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         var trigger = (SimpleTrigger) scheduler.getTrigger(new TriggerKey(TEST_JOB_SIMPLE_TRIGGER, GROUP_NAME));
         assertThat(trigger.getRepeatInterval()).isEqualTo(1);
         quartzExecutorService.registerJobClass(scheduler, TestJobSimpleTriggerReset.class, TestJobSimpleTriggerReset.class.getAnnotation(JobSpec.class));
@@ -193,7 +192,7 @@ public class QuartzPlusAutoConfigurationTest {
      * This test case tries to re-register / reset changed job classes (cron and simple trigger) during runtime after the scheduler has been initialized with {@link JobsCollection}
      */
     @Test
-    public void testReRegisterJobsCronReset() throws JobServiceException, SchedulerException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    void testReRegisterJobsCronReset() throws JobServiceException, SchedulerException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         var triggerCron = (CronTrigger) scheduler.getTrigger(new TriggerKey(TEST_JOB_CRON_TRIGGER, GROUP_NAME));
         isTrue(triggerCron.getCronExpression().equals(CRON_EXPRESSION_ORIGINAL), "The trigger should have not yet been reset; CronExpression should be = " + CRON_EXPRESSION_ORIGINAL);
         quartzExecutorService.registerJobClass(scheduler, TestJobCronTriggerReset.class, TestJobCronTriggerReset.class.getAnnotation(JobSpec.class));
@@ -202,21 +201,20 @@ public class QuartzPlusAutoConfigurationTest {
     }
 
     @Test
-    public void testJobFailureOnErrorRepeat() {
+    void testJobFailureOnErrorRepeat() {
         assertThat(FailingTestJobWithOnErrorRepeat.failureOnErrorRepeatRepeatCountDownLatch.getCount()).isEqualTo(0);
         assertThat(FailingTestJobWithOnErrorRepeat.failureOnErrorRepeatCountDownLatch.getCount()).isEqualTo(0);
     }
 
     @Test
-    public void testJobFailure() {
+    void testJobFailure() {
         assertThat(FailingTestJob.failureCountDownLatch.getCount()).isEqualTo(0);
     }
 
     @BeforeAll
-    public static void setUpOnce() throws Exception {
+    static void setUpOnce() throws Exception {
         app = new SpringApplication(TestConfig.class);
         final var props = new Properties();
-        props.putAll(H2Configuration.createQuartzConfigProperties());
         props.setProperty("testing.on.error.repeat.count", "2");
         props.setProperty("testing.on.error.repeat.delay", "1");
         props.setProperty("testing.cron.trigger", "0/30 * * * * ?");
@@ -238,7 +236,7 @@ public class QuartzPlusAutoConfigurationTest {
     }
 
     @AfterAll
-    public static void shutdown() {
+    static void shutdown() {
         if (appContext != null) {
             appContext.close();
         }
