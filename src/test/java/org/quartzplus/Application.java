@@ -26,7 +26,7 @@ public class Application {
     public static class AppConfig {
         @Bean
         JobsCollection appJobsCollection() {
-            return () -> List.of(DemoJob.class, ExecutionLogCleanupJob.class);
+            return () -> List.of(ExecutionLogCleanupJob.class);
         }
     }
 }

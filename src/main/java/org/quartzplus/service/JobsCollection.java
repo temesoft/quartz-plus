@@ -6,7 +6,7 @@ import org.quartzplus.annotation.JobSpec;
 import java.util.List;
 
 /**
- * A marker interface used to aggregate and expose Quartz job classes for automatic registration.
+ * A functional interface used to aggregate and expose Quartz job classes for automatic registration.
  * <p>This interface acts as a provider for the {@code QuartzExecutorService}. At startup, the service
  * scans the Spring application context for all beans implementing {@code JobsCollection} and
  * registers every job class returned by {@link #getJobClassList()}.</p>
@@ -25,6 +25,7 @@ import java.util.List;
  * @see JobSpec
  * @see org.quartzplus.Job
  */
+@FunctionalInterface
 public interface JobsCollection {
 
     /**

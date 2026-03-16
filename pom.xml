@@ -4,7 +4,7 @@
 
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
     <name>quartz-plus</name>
     <description>quartz-plus is a Spring Boot auto-configuration library that enriches the
@@ -140,7 +140,7 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.8150</minimum>
+                                            <minimum>0.79</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

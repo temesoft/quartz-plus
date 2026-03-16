@@ -67,7 +67,7 @@ import java.util.Map;
         QuartzPlusFlywayConfiguration.class,
         SchedulerRestController.class
 })
-@PropertySource("quartz-plus-git.properties")
+@PropertySource("classpath:quartz-plus-git.properties")
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 @EnableConfigurationProperties(QuartzPlusProperties.class)
 public class QuartzPlusCommonConfiguration {
