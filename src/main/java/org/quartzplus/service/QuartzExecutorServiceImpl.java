@@ -448,7 +448,8 @@ public class QuartzExecutorServiceImpl implements QuartzExecutorService, Closeab
             if (startPausedProperty.isPresent()) {
                 startPaused = startPausedProperty.get();
             } else if (isNotBlank(jobSpec.triggerState().startTypeExp())) {
-                startPaused = expressionProcessor.processExpression(jobSpec.triggerState().startTypeExp(), Boolean.class);
+                startPaused = expressionProcessor.processExpression(jobSpec.triggerState().startTypeExp(), String.class)
+                        .equalsIgnoreCase(TriggerState.StartType.PAUSED.name());
             } else {
                 startPaused = jobSpec.triggerState().startType() == TriggerState.StartType.PAUSED;
             }
