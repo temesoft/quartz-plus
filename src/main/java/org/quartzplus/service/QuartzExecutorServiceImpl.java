@@ -290,13 +290,18 @@ public class QuartzExecutorServiceImpl implements QuartzExecutorService, Closeab
             return new JobRegistrationResult(false, false, true, message, null, null);
         }
 
-        final boolean enabled;
+        boolean enabled;
         final var enabledProperty = Optional.ofNullable(environment.getProperty(jobClass.getName() + ".enabled"));
         if (enabledProperty.isPresent()) {
             enabled = Boolean.parseBoolean(enabledProperty.get());
         } else {
             if (isNotBlank(jobSpec.triggerState().enabledExp())) {
-                enabled = expressionProcessor.processExpression(jobSpec.triggerState().enabledExp(), Boolean.class);
+                try {
+                    enabled = expressionProcessor.processExpression(jobSpec.triggerState().enabledExp(), Boolean.class);
+                } catch (Exception e) {
+                    enabled = expressionProcessor.processExpression(jobSpec.triggerState().enabledExp(), String.class)
+                            .equalsIgnoreCase(TriggerState.State.ENABLED.name());
+                }
             } else {
                 enabled = jobSpec.triggerState().enabled() == TriggerState.State.ENABLED;
             }
@@ -443,13 +448,17 @@ public class QuartzExecutorServiceImpl implements QuartzExecutorService, Closeab
             // Here, we make sure that trigger will not execute between calls scheduler.scheduleJob(...) and scheduler.pauseTrigger(...)
             // by using trigger start time + 10 seconds
             final var now = Instant.now();
-            final boolean startPaused;
+            boolean startPaused;
             final var startPausedProperty = Optional.ofNullable(environment.getProperty(jobClass.getName() + ".startPaused", Boolean.class));
             if (startPausedProperty.isPresent()) {
                 startPaused = startPausedProperty.get();
             } else if (isNotBlank(jobSpec.triggerState().startTypeExp())) {
-                startPaused = expressionProcessor.processExpression(jobSpec.triggerState().startTypeExp(), String.class)
-                        .equalsIgnoreCase(TriggerState.StartType.PAUSED.name());
+                try {
+                    startPaused = expressionProcessor.processExpression(jobSpec.triggerState().startTypeExp(), Boolean.class);
+                } catch (Exception e) {
+                    startPaused = expressionProcessor.processExpression(jobSpec.triggerState().startTypeExp(), String.class)
+                            .equalsIgnoreCase(TriggerState.StartType.PAUSED.name());
+                }
             } else {
                 startPaused = jobSpec.triggerState().startType() == TriggerState.StartType.PAUSED;
             }
