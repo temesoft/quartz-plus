@@ -3,7 +3,6 @@ package org.quartzplus.configuration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.quartzplus.DemoJob;
 import org.quartzplus.internal.ExecutionLogCleanupJob;
 import org.quartzplus.service.JobsCollection;
 import org.quartzplus.test.EmbeddedPortRetriever;
@@ -67,7 +66,7 @@ class WebAdminConfigurationTest {
     static class TestConfig {
         @Bean
         JobsCollection jobsCollection() {
-            return () -> List.of(DemoJob.class, ExecutionLogCleanupJob.class);
+            return () -> List.of(ExecutionLogCleanupJob.class);
         }
     }
 }

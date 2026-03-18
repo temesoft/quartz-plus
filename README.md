@@ -8,7 +8,7 @@
 [![Java CI](https://github.com/temesoft/quartz-plus/actions/workflows/main.yml/badge.svg)](https://github.com/temesoft/quartz-plus/actions/workflows/main.yml)
 
 
-**quartz-plus** is a Spring Boot auto-configuration library that enriches the
+**Quartz-Plus** is a [Spring Boot](https://spring.io/projects/spring-boot) auto-configuration library that enriches the
 standard [Quartz Scheduler](https://quartz-scheduler.org/) with declarative annotation-driven job registration,
 automatic execution logging, retry-on-error support, Micrometer metrics, and a built-in web administration UI - all
 without boilerplate.
@@ -82,14 +82,14 @@ without boilerplate.
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
 ### Gradle installation
 
 ```gradle
-testImplementation 'io.github.temesoft:quartz-plus:1.0.1'
+testImplementation 'io.github.temesoft:quartz-plus:1.0.2'
 ```
 
 
@@ -377,7 +377,7 @@ Or with dynamic values:
 
 ```java
 triggerState =@TriggerState(
-        enabledExp = "${my-job.enabled:ENABLED}",
+        enabledExp = "${my-job.enabled:true}",
         startTypeExp = "${my-job.start-type:UNPAUSED}"
 )
 ```
@@ -799,12 +799,12 @@ All standard Quartz properties are supported. Key examples:
 
 ### Internal Job Properties
 
-| Property                                                 | Default       | Description                                                  |
-|----------------------------------------------------------|---------------|--------------------------------------------------------------|
-| `job-execution-log-cleanup-job.enabled`                  | `true`        | Enable or disable the `ExecutionLogCleanupJob`.              |
-| `job-execution-log-cleanup-job.cron-expression`          | `0 0 2 * * ?` | Cron schedule for the cleanup job (default: 2:00 AM daily).  |
-| `job-execution-log-cleanup-job.time-zone`                | `UTC`         | Time zone for the cleanup job's cron schedule.               |
-| `org.quartzplus.internal.ExecutionLogCleanupJob.daysAgo` | `30`          | Execution log records older than this many days are deleted. |
+| Property                                        | Default       | Description                                                  |
+|-------------------------------------------------|---------------|--------------------------------------------------------------|
+| `job-execution-log-cleanup-job.enabled`         | `true`        | Enable or disable the `ExecutionLogCleanupJob`.              |
+| `job-execution-log-cleanup-job.cron-expression` | `0 0 2 * * ?` | Cron schedule for the cleanup job (default: 2:00 AM daily).  |
+| `job-execution-log-cleanup-job.time-zone`       | `UTC`         | Time zone for the cleanup job's cron schedule.               |
+| `job-execution-log-cleanup-job.days-ago`        | `30`          | Execution log records older than this many days are deleted. |
 
 ### Flyway Placeholder Properties
 

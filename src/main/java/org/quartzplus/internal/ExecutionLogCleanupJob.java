@@ -43,11 +43,14 @@ import java.util.SimpleTimeZone;
         triggerName = "ExecutionLogCleanupJob-Trigger",
         jobDescription = "Job cleans old execution log entries, by default older than 30 days ago. " +
                 "Optionally takes json parameter \"daysAgo\" to overwrite the original setting. Example {\"daysAgo\":7}",
-        triggerState = @TriggerState(enabledExp = "${job-execution-log-cleanup-job.enabled:true}"),
+        triggerState = @TriggerState(
+                enabledExp = "${" + ExecutionLogCleanupJob.JOB_PROPERTY_PREFIX + ".enabled:true}",
+                startTypeExp = "${" + ExecutionLogCleanupJob.JOB_PROPERTY_PREFIX + ".start-type:UNPAUSED}"
+        ),
         trigger = @TriggerSpec(
                 cronTrigger = @CronTriggerSpec(
-                        cronExpressionExp = "${job-execution-log-cleanup-job.cron-expression:0 0 2 * * ?}",
-                        timeZoneExp = "${job-execution-log-cleanup-job.time-zone:UTC}"
+                        cronExpressionExp = "${" + ExecutionLogCleanupJob.JOB_PROPERTY_PREFIX + ".cron-expression:0 0 2 * * ?}",
+                        timeZoneExp = "${" + ExecutionLogCleanupJob.JOB_PROPERTY_PREFIX + ".time-zone:UTC}"
                 )
         )
 )
@@ -55,11 +58,12 @@ public class ExecutionLogCleanupJob extends Job {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExecutionLogCleanupJob.class);
     private static final String DAYS_AGO_KEY = "daysAgo";
+    public static final String JOB_PROPERTY_PREFIX = "job-execution-log-cleanup-job";
 
     @Autowired
     private JobExecutionLogService jobExecutionLogService;
 
-    @Value("${org.quartzplus.internal.ExecutionLogCleanupJob.daysAgo:30}")
+    @Value("${" + JOB_PROPERTY_PREFIX + ".days-ago:30}")
     private int daysAgo;
 
     @Override

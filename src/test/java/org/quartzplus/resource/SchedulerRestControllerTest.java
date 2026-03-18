@@ -381,7 +381,9 @@ class SchedulerRestControllerTest {
             jobName = TEST_JOB_NAME_REMOVABLE,
             groupName = GROUP_NAME,
             triggerName = TEST_JOB_TRIGGER_REMOVABLE,
-            triggerState = @TriggerState(enabled = TriggerState.State.ENABLED),
+            triggerState = @TriggerState(
+                    enabledExp = "${test.job.enabled:ENABLED}",
+                    startTypeExp = "${test.job.start-type:UNPAUSED}"),
             trigger = @TriggerSpec(
                     simpleTrigger = @SimpleTriggerSpec(
                             repeatCount = SimpleTriggerable.REPEAT_INDEFINITELY,
