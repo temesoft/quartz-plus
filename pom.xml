@@ -46,7 +46,7 @@
         <guava.version>33.6.0-jre</guava.version>
         <swagger-annotations.version>2.2.48</swagger-annotations.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
-        <commons-io.version>2.21.0</commons-io.version>
+        <commons-io.version>2.22.0</commons-io.version>
         <test-pojo.version>1.0.6</test-pojo.version>
     </properties>
 
