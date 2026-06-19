@@ -41,7 +41,7 @@
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
         <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
+        <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
 
         <guava.version>33.6.0-jre</guava.version>
         <swagger-annotations.version>2.2.51</swagger-annotations.version>
