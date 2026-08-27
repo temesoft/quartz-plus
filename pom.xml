@@ -44,7 +44,7 @@
         <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
 
         <guava.version>33.7.1-jre</guava.version>
-        <swagger-annotations.version>2.2.52</swagger-annotations.version>
+        <swagger-annotations.version>2.2.54</swagger-annotations.version>
         <commons-collections4.version>4.6.0</commons-collections4.version>
         <commons-io.version>2.22.0</commons-io.version>
         <test-pojo.version>1.0.6</test-pojo.version>
