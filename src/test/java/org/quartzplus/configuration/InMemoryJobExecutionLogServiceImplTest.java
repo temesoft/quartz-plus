@@ -11,6 +11,7 @@ import org.quartzplus.Application;
 import org.quartzplus.Job;
 import org.quartzplus.SimpleTriggerable;
 import org.quartzplus.annotation.JobSpec;
+import org.quartzplus.annotation.OnErrorSpec;
 import org.quartzplus.domain.JobExecutionLog;
 import org.quartzplus.service.InMemoryJobExecutionLogServiceImpl;
 import org.quartzplus.service.JobExecutionLogService;
@@ -30,6 +31,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -52,6 +54,8 @@ class InMemoryJobExecutionLogServiceImplTest {
     private static final String GROUP_NAME = "TestGroup";
     private static final String TEST_JOB_SIMPLE_NAME = "TestJobSimple";
     private static final String TEST_JOB_SIMPLE_TRIGGER = "TestJobSimpleTrigger";
+    private static final String RETRY_TEST_JOB_NAME = "RetryTestJob";
+    private static final String RETRY_TEST_JOB_TRIGGER = "RetryTestJobTrigger";
 
     @Autowired
     private ConfigurableApplicationContext appContext;
@@ -88,11 +92,36 @@ class InMemoryJobExecutionLogServiceImplTest {
         jobExecutionLogs.forEach(log -> {
             assertThat(log.getSuccess()).isFalse();
             assertThat(log.getErrorMessage())
-                    .contains("Error executing job")
-                    .contains("aborting execution");
+                    .startsWith("Error executing job \"" + GROUP_NAME + "." + TEST_JOB_SIMPLE_NAME + "\": ")
+                    .contains("java.lang.RuntimeException: Test exception message #")
+                    .doesNotContain("Retry policy");
+            assertThat(log.getStackTrace()).doesNotContain("Suppressed:");
         });
         assertThat(jobExecutionLogService.clearJobExecutionLog(Instant.now()))
                 .isGreaterThanOrEqualTo((int) jobExecutionLogs.getTotalElements());
+    }
+
+    @Test
+    void testFailedRetriesLogLastExceptionWithEarlierAttemptsInStackTrace() {
+        final var jobExecutionLogService = appContext.getBean(JobExecutionLogService.class);
+        final var deadline = Instant.now().plusSeconds(10);
+        var jobExecutionLogs = jobExecutionLogService.getJobExecutionLogList(10, 0, GROUP_NAME, null, RETRY_TEST_JOB_TRIGGER, null);
+        while (jobExecutionLogs.isEmpty() && Instant.now().isBefore(deadline)) {
+            Uninterruptibles.sleepUninterruptibly(Duration.ofMillis(100));
+            jobExecutionLogs = jobExecutionLogService.getJobExecutionLogList(10, 0, GROUP_NAME, null, RETRY_TEST_JOB_TRIGGER, null);
+        }
+        assertThat(jobExecutionLogs).isNotEmpty();
+        final var log = jobExecutionLogs.getContent().get(0);
+        assertThat(log.getSuccess()).isFalse();
+        assertThat(log.getErrorMessage())
+                .isEqualTo("Error executing job \"" + GROUP_NAME + "." + RETRY_TEST_JOB_NAME
+                        + "\": java.lang.IllegalStateException: Retry test attempt #4");
+        assertThat(log.getStackTrace())
+                .contains("Caused by: java.lang.IllegalStateException: Retry test attempt #4")
+                .contains("Suppressed: java.lang.IllegalStateException: Retry test attempt #1")
+                .contains("Suppressed: java.lang.IllegalStateException: Retry test attempt #2")
+                .contains("Suppressed: java.lang.IllegalStateException: Retry test attempt #3")
+                .doesNotContain("RetryException");
     }
 
     @Test
@@ -179,6 +208,32 @@ class InMemoryJobExecutionLogServiceImplTest {
         }
     }
 
+    @JobSpec(
+            jobName = RETRY_TEST_JOB_NAME,
+            groupName = GROUP_NAME,
+            triggerName = RETRY_TEST_JOB_TRIGGER,
+            onError = @OnErrorSpec(onErrorRepeatCount = 3)
+    )
+    public static class RetryTestJob extends Job implements SimpleTriggerable {
+
+        private final AtomicInteger attempts = new AtomicInteger(0);
+
+        @Override
+        public void executeJob(final JobExecutionContext jobExecutionContext) {
+            throw new IllegalStateException("Retry test attempt #" + attempts.incrementAndGet());
+        }
+
+        @Override
+        public int getRepeatCount() {
+            return -1;
+        }
+
+        @Override
+        public long getRepeatInterval() {
+            return 1000;
+        }
+    }
+
     @Configuration
     @Import(value = {
             QuartzPlusAutoConfiguration.class
@@ -187,7 +242,7 @@ class InMemoryJobExecutionLogServiceImplTest {
 
         @Bean
         JobsCollection jobsCollection() {
-            return () -> List.of(TestJob.class);
+            return () -> List.of(TestJob.class, RetryTestJob.class);
         }
     }
 }

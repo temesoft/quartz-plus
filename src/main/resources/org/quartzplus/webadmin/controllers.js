@@ -17,9 +17,9 @@ function JobsController($scope, $routeParams, toaster, $timeout) {
         $scope.jobs = data;
         $scope.$apply();
         $scope.executeJobNow = function () {
-            var group = $('#executeJobModal .groupName').html();
-            var job = $('#executeJobModal .jobName').html();
-            var trigger = $('#executeJobModal .triggerName').html();
+            var group = $('#executeJobModal .groupName').text();
+            var job = $('#executeJobModal .jobName').text();
+            var trigger = $('#executeJobModal .triggerName').text();
             var data = $('#executeJobModal textarea').val();
             $(".executeTriggerBtn").button('loading');
             $.ajax({ url: __servicePrefix + "/trigger/execute?groupName=" + group + "&triggerName=" + trigger + "&jobName=" + job,
@@ -120,7 +120,7 @@ function TriggerDetailsController($scope, $routeParams, toaster, $timeout, $loca
                 $(".pauseTriggerBtn").button('loading');
                 $.post(__servicePrefix + "/trigger/pause?groupName=" + group + "&triggerName=" + trigger,function (data) {
                     TriggerDetailsController($scope, $routeParams, toaster, $timeout, $location);
-                    toaster.pop('success', '', "Trigger \"" + group + "." + $routeParams.triggerName + "\" is paused");
+                    toaster.pop('success', '', "Trigger \"" + group + "." + trigger + "\" is paused");
                 }).fail(function (data) {
                         processError(data, toaster, $timeout);
                     });
@@ -129,7 +129,7 @@ function TriggerDetailsController($scope, $routeParams, toaster, $timeout, $loca
                 $(".resumeTriggerBtn").button('loading');
                 $.post(__servicePrefix + "/trigger/resume?groupName=" + group + "&triggerName=" + trigger,function (data) {
                     TriggerDetailsController($scope, $routeParams, toaster, $timeout, $location);
-                    toaster.pop('success', '', "Trigger \"" + group + "." + $routeParams.triggerName + "\" is resumed");
+                    toaster.pop('success', '', "Trigger \"" + group + "." + trigger + "\" is resumed");
 //                window.location = ("#/trigger/" + group + "/" + trigger + "?t=" + new Date().getTime());
                 }).fail(function (data) {
                         processError(data, toaster, $timeout);
@@ -141,7 +141,7 @@ function TriggerDetailsController($scope, $routeParams, toaster, $timeout, $loca
                     $.ajax({ url: __servicePrefix + "/trigger?groupName=" + group + "&triggerName=" + trigger, type: 'DELETE'})
                         .done(function () {
                             window.location = ("#/triggers");
-                            toaster.pop('success', '', "Trigger \"" + group + "." + $routeParams.triggerName + "\" is deleted");
+                            toaster.pop('success', '', "Trigger \"" + group + "." + trigger + "\" is deleted");
                         })
                         .fail(function (data) {
                             processError(data, toaster, $timeout);
@@ -154,9 +154,9 @@ function TriggerDetailsController($scope, $routeParams, toaster, $timeout, $loca
                     $('#executeJobModal textarea').select();
                 })
                 $('#executeJobModal').modal({show: true});
-                $('#executeJobModal .groupName').html(group);
-                $('#executeJobModal .jobName').html(job);
-                $('#executeJobModal .triggerName').html(trigger);
+                $('#executeJobModal .groupName').text(group);
+                $('#executeJobModal .jobName').text(job);
+                $('#executeJobModal .triggerName').text(trigger);
             };
             $scope.$apply();
             reloadController($scope, "Triggers", function () {
@@ -217,9 +217,11 @@ function MetricsController($scope, $routeParams, toaster, $timeout) {
 }
 
 function reloadController($scope, viewId, controllerCallback) {
+    // pages share a view id (a list and its details), so the reload also checks the page's address is unchanged
+    var pageHash = window.location.hash;
     if ($("#autoRefreshToggleInput").prop('checked') && __currentPage === viewId) {
         setTimeout(function () {
-            if ($("#autoRefreshToggleInput").prop('checked') && __currentPage === viewId) {
+            if ($("#autoRefreshToggleInput").prop('checked') && __currentPage === viewId && window.location.hash === pageHash) {
                 controllerCallback();
             }
         }, __autoRefreshDelayMs);
@@ -250,7 +252,12 @@ function processError(data, toaster, $timeout) {
 
     $timeout(function () {
         if (data.responseText !== undefined && data.responseText !== null) {
-            var resp = JSON.parse(data.responseText);
+            var resp = {};
+            try {
+                resp = JSON.parse(data.responseText) || {};
+            } catch (e) {
+                // not a JSON body, shown as it is below
+            }
             if (resp.message !== undefined && resp.message !== null) {
                 console.log('Communication error: ' + resp.message);
                 toaster.pop('error', 'Communication error', resp.message);
@@ -264,3 +271,6 @@ function processError(data, toaster, $timeout) {
         }
     }, 0);
 }
+
+// the page's <body> names this controller; AngularJS 1.3+ no longer finds controllers among global functions
+app.controller('JobsController', JobsController);

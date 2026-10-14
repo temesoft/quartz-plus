@@ -1,0 +1,22 @@
+# Changes
+
+### Version 1.0.3
+- README section "Securing the web admin and the API": both paths must be protected by the host, one prefix for both, an example Spring Security rule (the one the tests use), CSRF, the UI's headers and the create switch
+- Web admin passes requests for the API on when `api-uri` lies below `web-admin.uri` (e.g. `/admin/scheduler` and `/admin/scheduler/api`); before, the UI's filter caught them and the API could not be reached in that layout
+- Project version `1.0.3`
+- Web admin front-end libraries are bundled in the jar under `webadmin/vendor/` and loaded with relative URLs, so the UI makes no request to another host; versions, npm sources and integrity hashes are listed in `webadmin/vendor/README.md`
+- Front-end libraries upgraded within their lines: AngularJS, angular-route and angular-animate 1.8.3 (from 1.2.6/1.2.0), jQuery 3.7.1 (from 1.12.0), Bootstrap and the Bootswatch "spacelab" theme 3.4.1 (from 3.3.6), Moment.js 2.31.0, AngularJS-Toaster 3.0.0, Bootstrap Toggle 2.2.2; `jquery-cookie` replaced by `js-cookie` 3.0.8; `html5shiv`, `respond.js` and the unused `angular-css` dropped; the theme's Google Fonts import removed
+- Web admin runs AngularJS in `ng-csp` mode and sends a restrictive `Content-Security-Policy` (`default-src 'self'`, inline styles and `data:` images allowed, no inline or eval'd scripts)
+- Web admin fixes found while upgrading: error toasts no longer fail on a response that is not JSON, auto-refresh no longer reloads a page that was left (it requested a just-deleted trigger), and pause/resume/delete toasts name the trigger they acted on
+- Build copies `webadmin/vendor/` without resource filtering, so fonts and scripts reach the jar unchanged
+- API loads no class by a name the caller sent unless it is a job: `GET {api-uri}/jobs?instanceClass=` matches the name against the scheduler's job classes and registered job classes without loading it (unknown names `400`, previously a `NullPointerException` for a class without `@JobSpec`), and `PUT {api-uri}/create` loads the class without initialising it and refuses anything that does not extend `Job` with `400`
+- New setting `quartz-plus.api.create-enabled` (default `true`): when `false`, `PUT {api-uri}/create` is answered `404`
+- Execution log shows the job's own exception (class and message) instead of Spring's "Retry policy ... exhausted" wrapper; exceptions from earlier retry attempts are kept as suppressed exceptions in the stack trace (`onFailure` still receives the retry exception, as before)
+- A job without retry settings runs once when it fails, as documented (`0` means no retries); in 1.0.2 it was retried once and so ran twice, because Spring Framework 7's `FixedBackOff` counts retries, not runs
+- Web admin builds no HTML from data: the `shorten` filter returns plain text, the log details and cluster nodes pages show it with escaping bindings and the full text as a tooltip, nothing is marked trusted with `$sce`, and the execute-job dialog writes and reads names with `.text()`; an error message or node name containing HTML is shown literally instead of running as script
+- Web admin works behind a host with Spring Security's CSRF protection: `index.html` is rendered per request with the `_csrf` and `_csrf_header` meta tags when the request carries a CSRF token, and the UI sends that token with every pause, resume, run-now and remove-trigger request; without Spring Security nothing changes
+- Spring Security (`spring-security-web`) added as an optional dependency, only used when on the class path
+- Web admin starts AngularJS only after the API address has loaded, so the first jobs request no longer goes to a wrong URL (with missing files now answered `404`, that request failed and left "execute now" without its handler)
+- Web admin filter serves only files that exist under `webadmin/` in the jar: `..`, backslashes, encoded characters, missing files and unknown file types are answered `404` (previously an empty `200`), and the URI prefix is removed only at the start
+- Web admin responses carry `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors 'none'`, `index.html` also `Cache-Control: no-store`; new setting `quartz-plus.web-admin.security-headers` (default `true`) turns the security headers off
+- Web admin filter knows the content types of web fonts and SVG, ready for bundled front-end libraries

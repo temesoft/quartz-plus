@@ -65,6 +65,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.quartzplus.configuration.Constants.PARAMETER_NAME_GROUP_NAME;
 import static org.quartzplus.configuration.Constants.PARAMETER_NAME_TRIGGER_NAME;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -107,6 +108,7 @@ public class SchedulerRestController {
     private final String quartzPlusVersion;
     private final String webUri;
     private final String apiUri;
+    private final boolean createEnabled;
 
     public SchedulerRestController(final Environment environment,
                                    final Scheduler scheduler,
@@ -129,6 +131,7 @@ public class SchedulerRestController {
         this.quartzPlusVersion = quartzPlusVersion;
         this.webUri = quartzPlusProperties.getWebAdmin().getUri();
         this.apiUri = quartzPlusProperties.getApiUri();
+        this.createEnabled = quartzPlusProperties.getApi().isCreateEnabled();
         LOGGER.info("Initializing quartz-plus rest api: {}", quartzPlusProperties.getApiUri());
     }
 
@@ -256,11 +259,14 @@ public class SchedulerRestController {
     ) throws SchedulerException {
         final var result = Lists.<JobDetail>newArrayList();
         if (isNotBlank(instanceClass)) {
-            try {
-                final var instance = Class.forName(instanceClass);
-                final var spec = instance.getAnnotation(JobSpec.class);
-                result.add(scheduler.getJobDetail(new JobKey(spec.jobName(), spec.groupName())));
-            } catch (final ClassNotFoundException e) {
+            // matched by name against the classes already known, never loaded: loading would run its static initialisers
+            for (final var jobKey : scheduler.getJobKeys(GroupMatcher.anyJobGroup())) {
+                final var jobDetail = scheduler.getJobDetail(jobKey);
+                if (jobDetail != null && jobDetail.getJobClass().getName().equals(instanceClass)) {
+                    result.add(jobDetail);
+                }
+            }
+            if (result.isEmpty() && jobClassList.stream().noneMatch(jobClass -> jobClass.getName().equals(instanceClass))) {
                 return new ResponseEntity<>(result, BAD_REQUEST);
             }
         } else if (isNotBlank(groupName) && isNotBlank(jobName)) {
@@ -427,7 +433,6 @@ public class SchedulerRestController {
 
     @RequestMapping(value = CREATE_URI, method = PUT)
     @Operation(summary = "Creates a new job/ trigger with specified parameters", method = "PUT")
-    @SuppressWarnings("unchecked")
     public ResponseEntity<String> createJob(
             @RequestParam(value = Constants.PARAMETER_NAME_INSTANCE_CLASS) final String jobClass,
             @RequestParam(value = PARAMETER_NAME_GROUP_NAME) final String groupName,
@@ -442,8 +447,16 @@ public class SchedulerRestController {
             @RequestParam(required = false, value = Constants.PARAMETER_NAME_REPEAT_COUNT) final Integer repeatCount,
             @RequestParam(required = false, value = Constants.PARAMETER_NAME_REPEAT_INTERVAL) final Long repeatInterval
     ) throws SchedulerException, IllegalAccessException, JobServiceException, InstantiationException, IOException {
+        if (!createEnabled) {
+            return new ResponseEntity<>(NOT_FOUND);
+        }
         try {
-            final var clazz = (Class<? extends Job>) Class.forName(jobClass);
+            // loaded without initialising, so a class that is not a job never runs its static initialisers
+            final var loadedClass = Class.forName(jobClass, false, SchedulerRestController.class.getClassLoader());
+            if (!Job.class.isAssignableFrom(loadedClass)) {
+                return new ResponseEntity<>("Class " + jobClass + " should extend class " + Job.class.getName(), BAD_REQUEST);
+            }
+            final var clazz = loadedClass.asSubclass(Job.class);
             final var triggerParameterOverridesBuilder = ImmutableMap.<String, Object>builder();
             if (isNotBlank(cronExpression)) {
                 triggerParameterOverridesBuilder.put(Constants.PARAMETER_NAME_CRON_EXP, cronExpression);
