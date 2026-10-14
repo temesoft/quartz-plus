@@ -14,7 +14,7 @@
         <tr data-ng-repeat="node in nodes">
             <td>{{node.schedulerName}}</td>
             <td>
-                <span ng-bind-html="node.instanceName | shorten:40"></span>
+                <span ng-attr-title="{{node.instanceName}}">{{node.instanceName | shorten:40}}</span>
             </td>
             <td>
                 {{node.lastCheckInTime | date : 'yyyy-MM-dd hh:mm:ss'}}

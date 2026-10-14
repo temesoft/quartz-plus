@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.web.client.RestTemplate;
@@ -41,10 +42,13 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @SuppressWarnings("unchecked")
@@ -59,6 +63,7 @@ class SchedulerRestControllerTest {
     private static final String URL_PREFIX = "http://localhost:";
     private static final String SCHEDULER_URI = "/test-scheduler-api";
     private static final RestTemplate restTemplate = new RestTemplate();
+    private static final Set<String> INITIALISED_CLASSES = ConcurrentHashMap.newKeySet();
 
     static {
         restTemplate.setErrorHandler(response -> !response.getStatusCode().is2xxSuccessful());
@@ -305,6 +310,60 @@ class SchedulerRestControllerTest {
     }
 
     @Test
+    void testJobListByInstanceClass() {
+        final var resultList = restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI + "/jobs?instanceClass=" + TestJob.class.getName(), ArrayList.class);
+        assertThat(resultList).hasSize(1);
+        assertThat(((Map<String, Object>) resultList.get(0)).get("name")).isEqualTo(TEST_JOB_NAME);
+    }
+
+    @Test
+    void testJobListByInstanceClassRefusesUnknownClassWithoutLoadingIt() {
+        for (final var className : List.of(
+                NotAJobWithStaticInitialiser.class.getName(),
+                UnscheduledJobWithStaticInitialiser.class.getName(),
+                "org.example.DoesNotExist"
+        )) {
+            final var response = restTemplate.getForEntity(URL_PREFIX + port + SCHEDULER_URI + "/jobs?instanceClass=" + className, String.class);
+            assertThat(response.getStatusCode()).as(className).isEqualTo(BAD_REQUEST);
+        }
+        assertThat(INITIALISED_CLASSES).isEmpty();
+    }
+
+    @Test
+    void testCreateJobRefusesNonJobClassWithoutInitialisingIt() {
+        final var response = restTemplate.exchange(URL_PREFIX + port + SCHEDULER_URI + "/create" +
+                        "?instanceClass={instanceClass}&groupName={groupName}&triggerName={triggerName}&jobName={jobName}",
+                HttpMethod.PUT, null, String.class, Map.of(
+                        "instanceClass", NotAJobWithStaticInitialiser.class.getName(),
+                        "groupName", RandomStringUtils.secure().nextAlphabetic(10),
+                        "triggerName", RandomStringUtils.secure().nextAlphabetic(10),
+                        "jobName", RandomStringUtils.secure().nextAlphabetic(10)
+                ));
+        assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
+        assertThat(response.getBody()).contains("should extend class " + Job.class.getName());
+        assertThat(INITIALISED_CLASSES).isEmpty();
+    }
+
+    @Test
+    void testCreateJobNeverLoadsCalendarParameterAsClass() throws SchedulerException {
+        final var groupName = RandomStringUtils.secure().nextAlphabetic(10);
+        final var jobName = RandomStringUtils.secure().nextAlphabetic(10);
+        final var response = restTemplate.exchange(URL_PREFIX + port + SCHEDULER_URI + "/create" +
+                        "?instanceClass={instanceClass}&groupName={groupName}&triggerName={triggerName}&jobName={jobName}" +
+                        "&calendar={calendar}&repeatInterval=60000&repeatCount=0",
+                HttpMethod.PUT, null, String.class, Map.of(
+                        "instanceClass", TestJob2.class.getName(),
+                        "groupName", groupName,
+                        "triggerName", RandomStringUtils.secure().nextAlphabetic(10),
+                        "jobName", jobName,
+                        "calendar", NotAJobWithStaticInitialiser.class.getName()
+                ));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(scheduler.getJobDetail(new JobKey(jobName, groupName))).isNotNull();
+        assertThat(INITIALISED_CLASSES).isEmpty();
+    }
+
+    @Test
     void testJobListError() {
         final var response = restTemplate.getForEntity(URL_PREFIX + port + SCHEDULER_URI + "/BAD_GROUP_NAME" + "/jobs", String.class);
         assertThat(response).isNotNull();
@@ -374,6 +433,23 @@ class SchedulerRestControllerTest {
 
         @Override
         public void executeJob(final JobExecutionContext jobExecutionContext) throws Exception {
+        }
+    }
+
+    public static class NotAJobWithStaticInitialiser {
+        static {
+            INITIALISED_CLASSES.add(NotAJobWithStaticInitialiser.class.getName());
+        }
+    }
+
+    @JobSpec(jobName = "UnscheduledJobWithStaticInitialiser", groupName = GROUP_NAME, triggerName = "UnscheduledJobWithStaticInitialiserTrigger")
+    public static class UnscheduledJobWithStaticInitialiser extends Job {
+        static {
+            INITIALISED_CLASSES.add(UnscheduledJobWithStaticInitialiser.class.getName());
+        }
+
+        @Override
+        public void executeJob(final JobExecutionContext jobExecutionContext) {
         }
     }
 

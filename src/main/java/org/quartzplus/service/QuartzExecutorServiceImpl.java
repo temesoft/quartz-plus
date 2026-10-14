@@ -625,7 +625,7 @@ public class QuartzExecutorServiceImpl implements QuartzExecutorService, Closeab
         if (e != null) {
             errorMessage = e.getMessage();
             if (e.getCause() != null) {
-                errorMessage = errorMessage + ": " + e.getCause().getMessage();
+                errorMessage = errorMessage + ": " + e.getCause();
             }
         }
 

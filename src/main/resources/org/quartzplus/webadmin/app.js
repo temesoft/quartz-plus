@@ -1,16 +1,32 @@
 'use strict';
 
 var __currentPage = "";
-var __liveUpdateMinutes = $.cookie('__liveUpdateMinutes');
-var __autoRefreshToggleCookie = $.cookie('__autoRefreshToggle');
+// cookies are scoped to the page's own path, not the whole host
+var __cookies = Cookies.withAttributes({path: ''});
+var __liveUpdateMinutes = __cookies.get('__liveUpdateMinutes');
+var __autoRefreshToggleCookie = __cookies.get('__autoRefreshToggle');
 var __autoRefreshDelayMs = 10000;
 var __servicePrefix = "org/quartzplus/api";
+var __csrfToken = $("meta[name='_csrf']").attr("content");
+var __csrfHeader = $("meta[name='_csrf_header']").attr("content");
 
-// This call retrieves the context path for Scheduler REST API
+// Sends the host's CSRF token, rendered into the page by the server, with every request that changes something
+if (__csrfToken && __csrfHeader) {
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS)$/i.test(settings.type)) {
+                xhr.setRequestHeader(__csrfHeader, __csrfToken);
+            }
+        }
+    });
+}
+
+// This call retrieves the context path for Scheduler REST API; the controllers use it, so Angular starts only after it
 $.get(__servicePrefix, function (data) {
     __servicePrefix = data;
+    angular.bootstrap(document, ['app']);
 }).fail(function (data) {
-    processError(data, toaster, $timeout);
+    console.log('Unable to load the scheduler API address: ' + data.status);
 });
 
 
@@ -18,6 +34,7 @@ $.get(__servicePrefix, function (data) {
 var app = angular.module('app', ['ngRoute', 'toaster', 'ngAnimate']).
     config(['$routeProvider', '$locationProvider',
         function ($routeProvider, $locationProvider) {
+            $locationProvider.hashPrefix('');
             // Define routes
             $routeProvider
                 .when('/configuration', { templateUrl: 'inc/configuration.html', controller: ConfigurationController})
@@ -51,16 +68,16 @@ var app = angular.module('app', ['ngRoute', 'toaster', 'ngAnimate']).
             }
         };
     }).
-    filter('shorten', function ($sce) {
+    filter('shorten', function () {
         return function (input, size) {
             if (input !== undefined && input !== null) {
                 if (input.length > size) {
-                    return $sce.trustAsHtml("<span title='" + input + "'>" + input.substring(0, size).trim() + "...</span>");
+                    return input.substring(0, size).trim() + "...";
                 } else {
-                    return $sce.trustAsHtml(input);
+                    return input;
                 }
             } else {
-                return $sce.trustAsHtml("");
+                return "";
             }
         };
     });
@@ -129,9 +146,9 @@ $(document).ready(function(){
 
     $("#autoRefreshToggleInput").unbind("change").bind("change", function (e) {
         if ($("#autoRefreshToggleInput").prop('checked')) {
-            $.removeCookie('__autoRefreshToggle');
+            __cookies.remove('__autoRefreshToggle');
         } else {
-            $.cookie('__autoRefreshToggle', "true");
+            __cookies.set('__autoRefreshToggle', "true");
         }
     });
 });

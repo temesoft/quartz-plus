@@ -37,6 +37,7 @@ without boilerplate.
 - [Business Calendars](#business-calendars)
 - [Web Administration UI](#web-administration-ui)
 - [REST API Reference](#rest-api-reference)
+- [Securing the Web Admin and the API](#securing-the-web-admin-and-the-api)
 - [Database Migration (Flyway)](#database-migration-flyway)
 - [Configuration Properties Reference](#configuration-properties-reference)
 - [Internal Jobs](#internal-jobs)
@@ -82,14 +83,14 @@ without boilerplate.
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 
 ### Gradle installation
 
 ```gradle
-testImplementation 'io.github.temesoft:quartz-plus:1.0.2'
+testImplementation 'io.github.temesoft:quartz-plus:1.0.3'
 ```
 
 
@@ -666,7 +667,16 @@ quartz-plus:
   web-admin:
     enabled: true          # default: true
     uri: /scheduler/admin  # default: /scheduler/admin
+    security-headers: true # default: true
 ```
+
+The UI serves only its own files: any other path below `uri` (including `..`, backslashes and encoded characters) is
+answered `404`. All of its scripts, stylesheets and fonts are bundled in the jar, so it makes no request to another host.
+Its responses carry `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and
+`Content-Security-Policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`,
+so another site cannot frame it and nothing from another origin runs in it; `index.html` is sent with
+`Cache-Control: no-store`. A host that sets these headers for its whole site can turn the UI's off with
+`security-headers: false`.
 
 To disable the web UI while keeping the REST API:
 
@@ -721,6 +731,77 @@ curl -X PUT "http://localhost:8080/scheduler/create" \
      --data-urlencode "timeZone=UTC"
 ```
 
+`instanceClass` must name a class that extends `org.quartzplus.Job`; any other class is answered `400` without being
+initialised. A host that never creates jobs at run time can switch the endpoint off with
+`quartz-plus.api.create-enabled: false`, and it is then answered `404`.
+
+On `GET /scheduler/jobs`, `instanceClass` is matched against the job classes the scheduler already knows (scheduled
+jobs and registered job classes) and is never loaded; an unknown class name is answered `400`.
+
+---
+
+## Securing the Web Admin and the API
+
+quartz-plus has no authentication of its own. The web admin UI and the REST API can pause, run, remove and create jobs,
+so the **host application must protect both paths** - `quartz-plus.web-admin.uri` and `quartz-plus.api-uri` - and
+everything below them.
+
+### One prefix for both
+
+Put both under a prefix of the host's own administration area, so one rule covers them:
+
+```yaml
+quartz-plus:
+  api-uri: /admin/scheduler/api
+  web-admin:
+    uri: /admin/scheduler
+```
+
+The API may sit below the UI's path, as here: the UI passes requests for the API's paths on to the API.
+
+### Example Spring Security rule
+
+Requires an administrator for both paths and everything below them (this is the rule the library's own tests use):
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    SecurityFilterChain securityFilterChain(
+            final HttpSecurity http,
+            @Value("${quartz-plus.web-admin.uri:/scheduler/admin}") final String webAdminUri,
+            @Value("${quartz-plus.api-uri:/scheduler}") final String apiUri
+    ) throws Exception {
+        http.authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(webAdminUri, webAdminUri + "/**", apiUri, apiUri + "/**").hasRole("ADMIN")
+                        .anyRequest().permitAll())
+                .httpBasic(withDefaults());
+        return http.build();
+    }
+}
+```
+
+Replace `anyRequest().permitAll()` and `httpBasic(...)` with the host's own rules and sign-in (form login, OAuth2,
+...); the rule for the two paths stays the same.
+
+### CSRF
+
+With Spring Security's default CSRF protection on, the UI needs nothing else: when Spring Security is on the class path
+and the request carries a CSRF token, `index.html` is served with Spring Security's `_csrf` and `_csrf_header` meta
+tags, and the UI sends that token with every request that changes something (pause, resume, run now, remove trigger).
+A host that authenticates these paths with a header only (no session or cookie) can leave CSRF off for them, for
+example `http.csrf(csrf -> csrf.ignoringRequestMatchers(apiUri + "/**"))`.
+
+### Headers and the create endpoint
+
+- The UI sends its own `X-Content-Type-Options`, `X-Frame-Options` and `Content-Security-Policy` headers (see
+  [Web Administration UI](#web-administration-ui)). A host that sets these for its whole site can turn the UI's off
+  with `quartz-plus.web-admin.security-headers: false`.
+- `PUT {api-uri}/create` creates jobs at run time from a job class name. A host that never does this can switch it off
+  with `quartz-plus.api.create-enabled: false`; it is then answered `404`.
+
 ---
 
 ## Database Migration (Flyway)
@@ -769,8 +850,10 @@ spring:
 | `quartz-plus.db-migration-table`                   | `String`       | `flyway_quartz_schema_history`   | Name of the Flyway schema history table used by quartz-plus migrations.                                                              |
 | `quartz-plus.calendars`                            | `List<String>` | `null`                           | Fully qualified class names of Quartz `Calendar` implementations to register at startup.                                             |
 | `quartz-plus.api-uri`                              | `String`       | `/scheduler`                     | Base URI for the REST API endpoints.                                                                                                 |
+| `quartz-plus.api.create-enabled`                   | `boolean`      | `true`                           | Enable `PUT {api-uri}/create`, which creates jobs at run time. When `false` it is answered `404`.                                    |
 | `quartz-plus.web-admin.enabled`                    | `boolean`      | `true`                           | Enable or disable the web administration UI.                                                                                         |
 | `quartz-plus.web-admin.uri`                        | `String`       | `/scheduler/admin`               | URI where the web administration UI is served.                                                                                       |
+| `quartz-plus.web-admin.security-headers`           | `boolean`      | `true`                           | Add `X-Content-Type-Options`, `X-Frame-Options` and `Content-Security-Policy` to the UI's responses. Turn off if the host sets them. |
 | `quartz-plus.job-execution-log.type`               | `enum`         | `DataSource`                     | Log storage strategy: `DataSource` (persisted to DB) or `InMemory` (volatile, bounded list).                                         |
 | `quartz-plus.job-execution-log.in-memory-max-size` | `int`          | `1000`                           | Maximum number of log entries retained when using the `InMemory` storage type. Oldest entries are evicted when the limit is reached. |
 

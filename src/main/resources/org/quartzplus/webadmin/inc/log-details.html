@@ -24,7 +24,7 @@
         </tr>
         <tr>
             <td class="a-right">Message:</td>
-            <td data-ng-bind-html="log.errorMessage | shorten:40"></td>
+            <td><span data-ng-attr-title="{{log.errorMessage}}">{{log.errorMessage | shorten:40}}</span></td>
             <td class="a-right">Execution finished:</td>
             <td>
                 {{log.createTime | date : 'yyyy-MM-dd hh:mm:ss'}}

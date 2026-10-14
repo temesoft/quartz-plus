@@ -4,7 +4,7 @@
 
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
     <name>quartz-plus</name>
     <description>quartz-plus is a Spring Boot auto-configuration library that enriches the
@@ -56,6 +56,17 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <excludes>
+                    <exclude>org/quartzplus/webadmin/vendor/**</exclude>
+                </excludes>
+            </resource>
+            <!-- vendored front-end libraries are copied byte for byte: fonts are binary, scripts must not be rewritten -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>org/quartzplus/webadmin/vendor/**</include>
+                </includes>
             </resource>
         </resources>
         <plugins>
@@ -282,6 +293,11 @@
             <artifactId>swagger-annotations</artifactId>
             <version>${swagger-annotations.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-web</artifactId>
+            <optional>true</optional>
+        </dependency>
 
 
         <!-- Test scope -->
@@ -293,6 +309,22 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-classic</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <!-- registers an HttpSecurity configurer that needs spring-grpc, which is not on the class path -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-grpc-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-grpc-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

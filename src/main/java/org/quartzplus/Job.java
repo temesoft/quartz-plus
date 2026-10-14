@@ -10,6 +10,7 @@ import org.quartzplus.annotation.JobSpec;
 import org.quartzplus.configuration.LogCaptureServiceImpl;
 import org.quartzplus.service.ExpressionProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.retry.RetryException;
 import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.scheduling.quartz.QuartzJobBean;
@@ -110,11 +111,11 @@ public abstract class Job extends QuartzJobBean {
             timeContext = Optional.of(meterRegistry.timer(metricsNameDuration));
         }
         final var stopwatch = StopWatch.createStarted();
-        var maxAttempts = 1; // only one pass by default
+        var maxAttempts = 0; // retries after the first pass, none by default
         var backOffPeriod = 0L; // back off immediately by default
 
         if (this instanceof final OnErrorRepeatable onErrorRepeatable) {
-            if (onErrorRepeatable.getOnErrorRepeatCount() > 1) {
+            if (onErrorRepeatable.getOnErrorRepeatCount() > 0) {
                 maxAttempts = onErrorRepeatable.getOnErrorRepeatCount();
             }
             if (onErrorRepeatable.getOnErrorRepeatDelay() > 0) {
@@ -125,7 +126,7 @@ public abstract class Job extends QuartzJobBean {
         final var jobSpec = this.getClass().getAnnotation(JobSpec.class);
         if (isNotBlank(jobSpec.onError().onErrorRepeatCountExp())) {
             maxAttempts = expressionProcessor.processExpression(jobSpec.onError().onErrorRepeatCountExp(), Integer.class);
-        } else if (jobSpec.onError().onErrorRepeatCount() > 1) {
+        } else if (jobSpec.onError().onErrorRepeatCount() > 0) {
             maxAttempts = jobSpec.onError().onErrorRepeatCount();
         }
         if (isNotBlank(jobSpec.onError().onErrorRepeatDelayExp())) {
@@ -163,12 +164,20 @@ public abstract class Job extends QuartzJobBean {
             });
         } catch (final Throwable throwable) {
             onFailure(jobExecutionContext, throwable);
+            // the retry template wraps the job's own exception; report that one, with earlier attempts as suppressed
+            final var failure = throwable instanceof final RetryException retryException ? retryException.getCause() : throwable;
             if (meterRegistry != null) {
                 final var metricsNameFailure = FAILURE.getMetricName(groupName, jobName);
                 meterRegistry.counter(metricsNameFailure).increment();
             }
-            throw new JobExecutionException("Error executing job \"" +
-                    jobExecutionContext.getJobDetail().getKey().toString() + "\"", throwable);
+            final var jobExecutionException = new JobExecutionException("Error executing job \"" +
+                    jobExecutionContext.getJobDetail().getKey().toString() + "\"", failure);
+            if (throwable instanceof RetryException) {
+                for (final var earlierFailure : throwable.getSuppressed()) {
+                    jobExecutionException.addSuppressed(earlierFailure);
+                }
+            }
+            throw jobExecutionException;
         } finally {
             stopwatch.stop();
             timeContext.ifPresent(timer -> {

@@ -26,6 +26,28 @@ public class QuartzPlusProperties {
     private JobExecutionLogProperties jobExecutionLog = new JobExecutionLogProperties();
     private String apiUri = "/scheduler";
     private WebAdmin webAdmin = new WebAdmin();
+    private Api api = new Api();
+
+    /**
+     * Settings for the QuartzPlus REST API.
+     */
+    public static class Api {
+        private boolean createEnabled = true;
+
+        /**
+         * Whether the {@code PUT {api-uri}/create} endpoint, which creates jobs at run time from a job class name,
+         * is available. When {@code false} it is answered {@code 404}, for hosts that never create jobs at run time.
+         *
+         * @return {@code true} if jobs can be created through the API
+         */
+        public boolean isCreateEnabled() {
+            return createEnabled;
+        }
+
+        public void setCreateEnabled(final boolean createEnabled) {
+            this.createEnabled = createEnabled;
+        }
+    }
 
     /**
      * Settings for the QuartzPlus Web Administration interface.
@@ -33,6 +55,7 @@ public class QuartzPlusProperties {
     public static class WebAdmin {
         private boolean enabled = true;
         private String uri = "/scheduler/admin";
+        private boolean securityHeaders = true;
 
         public boolean isEnabled() {
             return enabled;
@@ -48,6 +71,21 @@ public class QuartzPlusProperties {
 
         public void setUri(final String uri) {
             this.uri = uri;
+        }
+
+        /**
+         * Whether the web administration UI adds its own security headers ({@code X-Content-Type-Options},
+         * {@code X-Frame-Options}, {@code Content-Security-Policy}) to its responses. A host that sets these
+         * headers itself can turn this off to avoid sending them twice.
+         *
+         * @return {@code true} if the UI adds its security headers
+         */
+        public boolean isSecurityHeaders() {
+            return securityHeaders;
+        }
+
+        public void setSecurityHeaders(final boolean securityHeaders) {
+            this.securityHeaders = securityHeaders;
         }
     }
 
@@ -135,6 +173,14 @@ public class QuartzPlusProperties {
 
     public void setApiUri(final String apiUri) {
         this.apiUri = apiUri;
+    }
+
+    public Api getApi() {
+        return api;
+    }
+
+    public void setApi(final Api api) {
+        this.api = api;
     }
 
     public WebAdmin getWebAdmin() {
