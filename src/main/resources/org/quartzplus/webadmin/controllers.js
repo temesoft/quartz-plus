@@ -217,11 +217,13 @@ function MetricsController($scope, $routeParams, toaster, $timeout) {
 }
 
 function reloadController($scope, viewId, controllerCallback) {
-    // pages share a view id (a list and its details), so the reload also checks the page's address is unchanged
+    // pages share a view id (a list and its details), so the reload also checks the page's address is unchanged;
+    // only the latest scheduled reload runs, so switching the toggle or paging the logs never starts a second loop
     var pageHash = window.location.hash;
+    var generation = ++__refreshGeneration;
     if ($("#autoRefreshToggleInput").prop('checked') && __currentPage === viewId) {
         setTimeout(function () {
-            if ($("#autoRefreshToggleInput").prop('checked') && __currentPage === viewId && window.location.hash === pageHash) {
+            if (generation === __refreshGeneration && $("#autoRefreshToggleInput").prop('checked') && __currentPage === viewId && window.location.hash === pageHash) {
                 controllerCallback();
             }
         }, __autoRefreshDelayMs);

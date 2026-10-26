@@ -1,5 +1,10 @@
 # Changes
 
+### Version 1.0.4 (2026-10-25 22:50:04)
+- Web admin remembers the refresh toggle in the browser's `localStorage` (previously a session cookie that only kept "refresh disabled" until the browser closed); switching it on refreshes the current page right away instead of at the next page change, and only one refresh loop runs at a time; an existing `__autoRefreshToggle` cookie is carried over once
+- Web admin dark theme: a theme button in the top bar switches between light (Bootswatch "spacelab") and dark (Bootswatch "darkly" 3.4.1, vendored without its Google Fonts import), remembered in `localStorage`; without a stored choice the UI follows the system's light or dark setting; `theme.js` applies the theme before the page is painted, so a dark page does not flash light
+- Project version `1.0.4-SNAPSHOT`
+
 ### Version 1.0.3
 - README section "Securing the web admin and the API": both paths must be protected by the host, one prefix for both, an example Spring Security rule (the one the tests use), CSRF, the UI's headers and the create switch
 - Web admin passes requests for the API on when `api-uri` lies below `web-admin.uri` (e.g. `/admin/scheduler` and `/admin/scheduler/api`); before, the UI's filter caught them and the API could not be reached in that layout

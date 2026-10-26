@@ -116,7 +116,11 @@ class WebAdminConfigurationTest {
             final var response = filter(WEB_ADMIN_URI + "/" + reference, true);
             assertThat(response.getStatus()).as(reference).isEqualTo(200);
             assertThat(response.getContentType()).as(reference).isNotBlank();
+            if (reference.endsWith(".css")) {
+                assertThat(response.getContentAsString()).as(reference).doesNotContain("@import");
+            }
         }
+        assertThat(references).contains("theme.js", "vendor/bootstrap/css/bootstrap-darkly.min.css");
         assertThat(filter(WEB_ADMIN_URI + "/vendor/bootstrap/fonts/glyphicons-halflings-regular.woff2", true).getContentType())
                 .isEqualTo("font/woff2");
         assertThat(filter(WEB_ADMIN_URI + "/vendor/README.md", true).getStatus()).isEqualTo(404);

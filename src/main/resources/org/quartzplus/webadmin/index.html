@@ -8,10 +8,12 @@
     <!-- quartz-plus:csrf-meta-tags -->
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="vendor/angular/angular-csp.css" />
-    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css" id="themeLightStylesheet" />
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap-darkly.min.css" id="themeDarkStylesheet" />
     <link rel="stylesheet" href="vendor/angularjs-toaster/toaster.min.css" />
     <link rel="stylesheet" href="vendor/bootstrap-toggle/bootstrap-toggle.min.css" />
     <link rel="stylesheet" href="style.css" />
+    <script src="theme.js"></script>
 </head>
 <body ng-controller="JobsController">
 
@@ -32,6 +34,9 @@
         </div>
         <div id="navbar" class="collapse navbar-collapse pull-right">
             <form class="navbar-form">
+                <button type="button" id="themeToggleButton" class="btn btn-xs theme-toggle">
+                    <i class="glyphicon glyphicon-adjust" aria-hidden="true"></i> <span class="theme-toggle-label"></span>
+                </button>
                 <input type="checkbox" id="autoRefreshToggleInput" class="btn btn-large" data-width="12em"/>
             </form>
         </div><!--/.nav-collapse -->

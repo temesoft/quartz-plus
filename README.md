@@ -83,14 +83,14 @@ without boilerplate.
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 </dependency>
 ```
 
 ### Gradle installation
 
 ```gradle
-testImplementation 'io.github.temesoft:quartz-plus:1.0.3'
+testImplementation 'io.github.temesoft:quartz-plus:1.0.4'
 ```
 
 
@@ -659,6 +659,14 @@ A built-in single-page administration interface is available at `/scheduler/admi
 - **Nodes** - cluster node visualization
 - **Metrics** - real-time success/failure/duration metrics
 - **Configuration** - view all active quartz-plus and Quartz properties (passwords are masked)
+
+Two controls in the top bar keep the administrator's choice in the browser (`localStorage`, never sent to the server),
+across reloads, tabs and browser restarts:
+
+- **Refresh toggle** - refreshes the current page every 10 seconds ("refresh every 10 sec") or not ("refresh
+  disabled"). Switching it on refreshes the page right away.
+- **Theme button** - switches between the light theme (Bootswatch "spacelab") and a dark theme (Bootswatch "darkly"); it
+  names the theme it switches to. Until a theme is chosen, the UI follows the system's light or dark setting.
 
 Configure the UI:
 
