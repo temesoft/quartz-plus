@@ -83,14 +83,14 @@ without boilerplate.
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 </dependency>
 ```
 
 ### Gradle installation
 
 ```gradle
-testImplementation 'io.github.temesoft:quartz-plus:1.0.3'
+testImplementation 'io.github.temesoft:quartz-plus:1.0.4'
 ```
 
 
