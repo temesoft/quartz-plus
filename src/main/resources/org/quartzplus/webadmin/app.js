@@ -4,8 +4,18 @@ var __currentPage = "";
 // cookies are scoped to the page's own path, not the whole host
 var __cookies = Cookies.withAttributes({path: ''});
 var __liveUpdateMinutes = __cookies.get('__liveUpdateMinutes');
-var __autoRefreshToggleCookie = __cookies.get('__autoRefreshToggle');
+var __autoRefreshStorageKey = 'quartz-plus.auto-refresh';
+var __autoRefreshEnabled = __storedPreference(__autoRefreshStorageKey) !== 'off';
 var __autoRefreshDelayMs = 10000;
+// increased by every scheduled reload; a pending reload runs only while it is still the latest
+var __refreshGeneration = 0;
+
+// earlier versions kept "refresh disabled" in a session cookie: carry it over once
+if (__cookies.get('__autoRefreshToggle') !== undefined) {
+    __autoRefreshEnabled = false;
+    __storePreference(__autoRefreshStorageKey, 'off');
+    __cookies.remove('__autoRefreshToggle');
+}
 var __servicePrefix = "org/quartzplus/api";
 var __csrfToken = $("meta[name='_csrf']").attr("content");
 var __csrfHeader = $("meta[name='_csrf_header']").attr("content");
@@ -135,7 +145,7 @@ $(document).ready(function(){
         size: 'mini'
     });
 
-    if (__autoRefreshToggleCookie != undefined && __autoRefreshToggleCookie != null) {
+    if (!__autoRefreshEnabled) {
         $("#autoRefreshToggleInput").bootstrapToggle('off');
         $(".refresh").css("display", "inline-block");
     } else {
@@ -146,9 +156,36 @@ $(document).ready(function(){
 
     $("#autoRefreshToggleInput").unbind("change").bind("change", function (e) {
         if ($("#autoRefreshToggleInput").prop('checked')) {
-            __cookies.remove('__autoRefreshToggle');
+            __storePreference(__autoRefreshStorageKey, 'on');
+            restartAutoRefresh();
         } else {
-            __cookies.set('__autoRefreshToggle', "true");
+            __storePreference(__autoRefreshStorageKey, 'off');
+            __refreshGeneration++;
         }
     });
+
+    showThemeToggleButton();
+    $("#themeToggleButton").on("click", function () {
+        var theme = __currentTheme === 'dark' ? 'light' : 'dark';
+        __applyTheme(theme);
+        __storePreference(__themeStorageKey, theme);
+        showThemeToggleButton();
+    });
 });
+
+// reloads the current page, whose controller then schedules its next refresh
+function restartAutoRefresh() {
+    var injector = angular.element(document.body).injector();
+    if (injector) {
+        injector.get('$rootScope').$apply(function () {
+            injector.get('$route').reload();
+        });
+    }
+}
+
+// the button names the theme it switches to
+function showThemeToggleButton() {
+    var other = __currentTheme === 'dark' ? 'light' : 'dark';
+    $("#themeToggleButton .theme-toggle-label").text(other);
+    $("#themeToggleButton").attr("title", "Switch to the " + other + " theme").attr("aria-label", "Switch to the " + other + " theme");
+}

@@ -12,6 +12,7 @@ checked against the one the npm registry publishes for that version. Each librar
 | jQuery                 | 3.7.1   | `jquery/jquery.min.js`                                                           | https://registry.npmjs.org/jquery/-/jquery-3.7.1.tgz                     | `sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==`         |
 | Bootstrap              | 3.4.1   | `bootstrap/js/bootstrap.min.js`, `bootstrap/fonts/*`                             | https://registry.npmjs.org/bootstrap/-/bootstrap-3.4.1.tgz               | `sha512-yN5oZVmRCwe5aKwzRj6736nSmKDX7pLYwsXiCj/EYmo16hODaBiT4En5btW/jhBF/seV+XMx3aYwukYC3A49DA==`         |
 | Bootswatch "spacelab"  | 3.4.1   | `bootstrap/css/bootstrap.min.css` (from `spacelab/bootstrap.min.css`)            | https://registry.npmjs.org/bootswatch/-/bootswatch-3.4.1.tgz             | `sha512-0hL4A8OUiqABgPipGrojf/hyhr5RS257xCNARlbK34HaMfhV5fXvwEooN4/ri9+jgX47J4Wg24ZPmfZ2xD2cKw==`         |
+| Bootswatch "darkly"    | 3.4.1   | `bootstrap/css/bootstrap-darkly.min.css` (from `darkly/bootstrap.min.css`)       | https://registry.npmjs.org/bootswatch/-/bootswatch-3.4.1.tgz             | `sha512-0hL4A8OUiqABgPipGrojf/hyhr5RS257xCNARlbK34HaMfhV5fXvwEooN4/ri9+jgX47J4Wg24ZPmfZ2xD2cKw==`         |
 | Moment.js              | 2.31.0  | `moment/moment.min.js` (from `min/moment.min.js`)                                | https://registry.npmjs.org/moment/-/moment-2.31.0.tgz                    | `sha512-0acOTfMiWOheYS4eoWb80yYMb/JLvVv9SHbs2PehaDzfUG0Bw855SKyk0IKTnPGa5+U2bmi3W68l1+sGLX/pvw==`         |
 | AngularJS-Toaster      | 3.0.0   | `angularjs-toaster/toaster.min.js`, `angularjs-toaster/toaster.min.css`          | https://registry.npmjs.org/angularjs-toaster/-/angularjs-toaster-3.0.0.tgz | `sha512-Upv5lkyrWWv9aIK4Jo7X9nCp1tPaWerSEeUrdjibm0GhwuW0/aoaUjn8Ou7IS8/QIGZspXrXHWGTa/CRBOj6Jg==`       |
 | Bootstrap Toggle       | 2.2.2   | `bootstrap-toggle/bootstrap-toggle.min.js`, `bootstrap-toggle/bootstrap-toggle.min.css` | https://registry.npmjs.org/bootstrap-toggle/-/bootstrap-toggle-2.2.2.tgz | `sha512-AkYD/i3NGCEksIb/PmmUrrxpa0DYi7Si30e9Ldhou2t1HTd9npoXUsxJJjFPvlV7iLUptlysWTcYD7i3DKV6qg==` |
@@ -20,6 +21,8 @@ checked against the one the npm registry publishes for that version. Each librar
 ## Changes made to the published files
 
 - `bootstrap/css/bootstrap.min.css`: the `@import` of the "Open Sans" font from `fonts.googleapis.com` is removed, so
+  the theme falls back to the next fonts in its stack (Helvetica Neue, Helvetica, Arial).
+- `bootstrap/css/bootstrap-darkly.min.css`: the `@import` of the "Lato" font from `fonts.googleapis.com` is removed, so
   the theme falls back to the next fonts in its stack (Helvetica Neue, Helvetica, Arial).
 - `angular/angular.min.js`, `angular/angular-route.min.js`, `angular/angular-animate.min.js`, `moment/moment.min.js`,
   `bootstrap-toggle/bootstrap-toggle.min.js`: the trailing `//# sourceMappingURL=` comment is removed, since the source
