@@ -4,7 +4,7 @@
 
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.4</version>
     <packaging>jar</packaging>
     <name>quartz-plus</name>
     <description>quartz-plus is a Spring Boot auto-configuration library that enriches the
