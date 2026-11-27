@@ -1,6 +1,7 @@
 # Changes
 
 ### Version 1.0.5 (2026-11-27)
+- README shows a screenshot of the web admin Dashboard (`docs/images/`), light or dark to match the reader's GitHub theme
 - Web admin UI rewritten: Preact 11 and htm as plain ES modules, no build step; AngularJS, jQuery, Bootstrap 3, Bootswatch, Moment.js, AngularJS-Toaster, Bootstrap Toggle and js-cookie are removed (about 940 KB of vendored files replaced by about 35 KB); same URL, same settings, same page addresses (`#/logs?...`, `#/trigger/<group>/<trigger>`), so links into the UI keep working
 - Web admin has a new look: left navigation with icons (Lucide, shipped as one same-origin SVG sprite), cards and tables on one set of colour variables for the light and the dark theme
 - Web admin theme switch with three modes in the top bar: device (the default; follows the operating system, also when it changes while the page is open), light and dark; a choice made in 1.0.4 is kept

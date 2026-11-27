@@ -13,6 +13,11 @@ standard [Quartz Scheduler](https://quartz-scheduler.org/) with declarative anno
 automatic execution logging, retry-on-error support, Micrometer metrics, and a built-in web administration UI - all
 without boilerplate.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/web-admin-dashboard-dark.png">
+  <img alt="Quartz-Plus web administration UI: the Dashboard with triggers by state, runs, success rate, mean duration, a chart of successful and failed runs, recent failures and the triggers that fire next" src="docs/images/web-admin-dashboard-light.png">
+</picture>
+
 ---
 
 ## Table of Contents
