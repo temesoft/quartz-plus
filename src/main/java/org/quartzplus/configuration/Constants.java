@@ -21,4 +21,10 @@ public class Constants {
     public static final String PARAMETER_NAME_PAGE_SIZE = "pageSize";
     public static final String PARAMETER_NAME_CURRENT_PAGE = "currentPage";
     public static final String PARAMETER_NAME_ID = "id";
+    public static final String PARAMETER_NAME_SUCCESS = "success";
+    public static final String PARAMETER_NAME_FROM = "from";
+    public static final String PARAMETER_NAME_TO = "to";
+    public static final String PARAMETER_NAME_BUCKET_SECONDS = "bucketSeconds";
+    public static final String PARAMETER_NAME_LIMIT = "limit";
+    public static final String PARAMETER_NAME_COUNT = "count";
 }

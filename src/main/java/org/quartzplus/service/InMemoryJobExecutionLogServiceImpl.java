@@ -3,14 +3,16 @@ package org.quartzplus.service;
 import jakarta.annotation.Nullable;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.collections4.queue.SynchronizedQueue;
-import org.apache.commons.lang3.stream.Streams;
 import org.quartzplus.domain.JobExecutionLog;
+import org.quartzplus.domain.JobExecutionStats;
 import org.quartzplus.domain.QuartzExecutionNode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
@@ -43,7 +45,7 @@ public class InMemoryJobExecutionLogServiceImpl implements JobExecutionLogServic
     }
 
     /**
-     * Filters and retrieves a paged list of logs from memory.
+     * Filters and retrieves a paged list of logs from memory, newest first.
      * <p>
      * Filtering is performed via stream predicates. If a filter parameter is blank or null,
      * it is ignored during the search.
@@ -63,30 +65,59 @@ public class InMemoryJobExecutionLogServiceImpl implements JobExecutionLogServic
                                                         @Nullable final String jobName,
                                                         @Nullable final String triggerName,
                                                         @Nullable final String instanceClass) {
-        final var list = Streams.of(EXECUTION_LOGS).filter(jobExecutionLog -> {
-            if (isNotBlank(groupName)) {
-                if (!jobExecutionLog.getGroupName().equals(groupName)) {
-                    return false;
-                }
-            }
-            if (isNotBlank(jobName)) {
-                if (!jobExecutionLog.getJobName().equals(jobName)) {
-                    return false;
-                }
-            }
-            if (isNotBlank(triggerName)) {
-                if (!jobExecutionLog.getTriggerName().equals(triggerName)) {
-                    return false;
-                }
-            }
-            if (isNotBlank(instanceClass)) {
-                if (!jobExecutionLog.getInstanceClass().equals(instanceClass)) {
-                    return false;
-                }
-            }
-            return true;
-        }).toList();
-        return new PageImpl<>(list, PageRequest.of(currentPage, pageSize), list.size());
+        return getJobExecutionLogList(pageSize, currentPage, groupName, jobName, triggerName, instanceClass, null, null, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Page<JobExecutionLog> getJobExecutionLogList(final Integer pageSize,
+                                                        final Integer currentPage,
+                                                        @Nullable final String groupName,
+                                                        @Nullable final String jobName,
+                                                        @Nullable final String triggerName,
+                                                        @Nullable final String instanceClass,
+                                                        @Nullable final Boolean success,
+                                                        @Nullable final Instant from,
+                                                        @Nullable final Instant to) {
+        final var list = snapshot().stream()
+                .filter(log -> !isNotBlank(groupName) || log.getGroupName().equals(groupName))
+                .filter(log -> !isNotBlank(jobName) || log.getJobName().equals(jobName))
+                .filter(log -> !isNotBlank(triggerName) || log.getTriggerName().equals(triggerName))
+                .filter(log -> !isNotBlank(instanceClass) || log.getInstanceClass().equals(instanceClass))
+                .filter(log -> success == null || success.equals(log.getSuccess()))
+                .filter(log -> from == null || !log.getCreateTime().isBefore(from))
+                .filter(log -> to == null || log.getCreateTime().isBefore(to))
+                .sorted(Comparator.comparing(JobExecutionLog::getCreateTime).reversed())
+                .toList();
+        final var first = Math.min((long) currentPage * pageSize, list.size());
+        final var last = Math.min(first + pageSize, list.size());
+        return new PageImpl<>(list.subList((int) first, (int) last), PageRequest.of(currentPage, pageSize), list.size());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<JobExecutionStats> getJobExecutionStats(final Instant from,
+                                                        final Instant to,
+                                                        final Duration bucketSize,
+                                                        @Nullable final String groupName,
+                                                        @Nullable final String jobName) {
+        final var accumulator = new ExecutionStatsAccumulator(from, to, bucketSize);
+        snapshot().stream()
+                .filter(log -> !isNotBlank(groupName) || log.getGroupName().equals(groupName))
+                .filter(log -> !isNotBlank(jobName) || log.getJobName().equals(jobName))
+                .forEach(log -> accumulator.addRun(log.getCreateTime(), Boolean.TRUE.equals(log.getSuccess()), log.getDuration()));
+        return accumulator.toStats();
+    }
+
+    // a copy taken under the queue's lock: iterating the synchronized queue itself is not thread safe
+    private List<JobExecutionLog> snapshot() {
+        synchronized (EXECUTION_LOGS) {
+            return List.copyOf(EXECUTION_LOGS);
+        }
     }
 
     /**
