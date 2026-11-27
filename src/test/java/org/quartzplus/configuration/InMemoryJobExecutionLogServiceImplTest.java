@@ -28,6 +28,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -147,6 +148,55 @@ class InMemoryJobExecutionLogServiceImplTest {
         final var updatedJobExecutionLogs = jobExecutionLogService
                 .getJobExecutionLogList(10, 0, null, null, null, null);
         assertThat(updatedJobExecutionLogs.getTotalElements()).isGreaterThanOrEqualTo(numberOfThreads);
+    }
+
+    @Test
+    void testListIsNewestFirstPagedAndFilteredByResultAndTime() {
+        final var service = appContext.getBean(JobExecutionLogService.class);
+        final var group = "InMemoryPagingGroup";
+        final var now = Instant.now();
+        for (var minutesAgo = 1; minutesAgo <= 5; minutesAgo++) {
+            service.insertJobExecutionLog(log(group, minutesAgo % 2 == 0, minutesAgo, now.minus(Duration.ofMinutes(minutesAgo))));
+        }
+
+        final var secondPage = service.getJobExecutionLogList(2, 1, group, null, null, null);
+        assertThat(secondPage.getTotalElements()).isEqualTo(5);
+        assertThat(secondPage.getContent()).extracting(JobExecutionLog::getDuration).containsExactly(3L, 4L);
+
+        final var lastPage = service.getJobExecutionLogList(2, 2, group, null, null, null);
+        assertThat(lastPage.getContent()).extracting(JobExecutionLog::getDuration).containsExactly(5L);
+
+        final var failures = service.getJobExecutionLogList(10, 0, group, null, null, null, false, null, null);
+        assertThat(failures.getContent()).extracting(JobExecutionLog::getDuration).containsExactly(1L, 3L, 5L);
+
+        final var window = service.getJobExecutionLogList(10, 0, group, null, null, null, null,
+                now.minus(Duration.ofMinutes(4)), now.minus(Duration.ofMinutes(2)));
+        assertThat(window.getContent()).extracting(JobExecutionLog::getDuration).containsExactly(3L, 4L);
+    }
+
+    @Test
+    void testStatsAddRunsUpPerBucket() {
+        final var service = appContext.getBean(JobExecutionLogService.class);
+        final var group = "InMemoryStatsGroup";
+        final var from = Instant.now().minus(Duration.ofHours(1)).truncatedTo(ChronoUnit.MINUTES);
+        service.insertJobExecutionLog(log(group, true, 100, from.plus(Duration.ofMinutes(1))));
+        service.insertJobExecutionLog(log(group, false, 300, from.plus(Duration.ofMinutes(2))));
+        service.insertJobExecutionLog(log(group, true, 50, from.plus(Duration.ofMinutes(12))));
+
+        final var stats = service.getJobExecutionStats(from, from.plus(Duration.ofMinutes(20)), Duration.ofMinutes(10), group, null);
+
+        assertThat(stats).hasSize(2);
+        assertThat(stats.get(0).getSuccessCount()).isEqualTo(1);
+        assertThat(stats.get(0).getFailureCount()).isEqualTo(1);
+        assertThat(stats.get(0).getAverageDuration()).isEqualTo(200);
+        assertThat(stats.get(0).getMaxDuration()).isEqualTo(300);
+        assertThat(stats.get(1).getSuccessCount()).isEqualTo(1);
+        assertThat(stats.get(1).getStart()).isEqualTo(from.plus(Duration.ofMinutes(10)));
+    }
+
+    private static JobExecutionLog log(final String group, final boolean success, final long duration, final Instant finished) {
+        return new JobExecutionLog(null, group, "Trigger", "Job", 5, success, success ? "Ok" : "Failed",
+                "instance", "org.example.Job", duration, "", "{}", finished);
     }
 
     private static class Worker extends Thread {

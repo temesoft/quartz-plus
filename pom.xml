@@ -4,7 +4,7 @@
 
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
     <packaging>jar</packaging>
     <name>quartz-plus</name>
     <description>quartz-plus is a Spring Boot auto-configuration library that enriches the
@@ -57,15 +57,15 @@
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <excludes>
-                    <exclude>org/quartzplus/webadmin/vendor/**</exclude>
+                    <exclude>org/quartzplus/webadmin/**</exclude>
                 </excludes>
             </resource>
-            <!-- vendored front-end libraries are copied byte for byte: fonts are binary, scripts must not be rewritten -->
+            <!-- the web admin UI is copied byte for byte: its scripts use ${...} and @ in template strings -->
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <includes>
-                    <include>org/quartzplus/webadmin/vendor/**</include>
+                    <include>org/quartzplus/webadmin/**</include>
                 </includes>
             </resource>
         </resources>

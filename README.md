@@ -83,14 +83,14 @@ without boilerplate.
 <dependency>
     <groupId>io.github.temesoft</groupId>
     <artifactId>quartz-plus</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 
 ### Gradle installation
 
 ```gradle
-testImplementation 'io.github.temesoft:quartz-plus:1.0.4'
+testImplementation 'io.github.temesoft:quartz-plus:1.0.5'
 ```
 
 
@@ -651,22 +651,31 @@ The calendar class must implement `org.quartz.Calendar` and have a no-arg constr
 
 A built-in single-page administration interface is available at `/scheduler/admin` (default). It provides:
 
-- **Scheduler** - metadata, instance ID, cluster status
-- **Triggers** - list all triggers with state, next/previous fire times
-- **Jobs** - browse and inspect job details
-- **Logs** - paginated execution history with full log capture, duration, and stack traces
-- **Timeline** - graphical execution timeline
-- **Nodes** - cluster node visualization
-- **Metrics** - real-time success/failure/duration metrics
+- **Dashboard** (the start page) - triggers by state, runs, success rate and mean duration over the last hour, 24
+  hours or 7 days, a chart of successful and failed runs, the latest failures, the triggers that fire next, and the
+  cluster's nodes
+- **Scheduler info** - metadata, instance ID, cluster status, registered job classes
+- **Triggers** - all triggers with state and previous/next fire times; search, filter by state, sort, and pause,
+  resume or run a trigger from the list. A trigger's page shows its schedule (a cron expression also in words), its
+  next five fire times, the duration of its job over time, and removes the trigger after a confirmation
+- **Job classes** - jobs with their classes and descriptions
+- **Execution logs** - paginated execution history, filtered by result and time on the server, with duration, message,
+  job data and captured output or stack trace (each with copy and line-wrap buttons); a **Timeline** view draws the runs
+  of the last 15 minutes to 24 hours as bars per job
+- **Cluster nodes** - shown for a clustered scheduler only
+- **Instance metrics** - success/failure counters and durations of this instance
 - **Configuration** - view all active quartz-plus and Quartz properties (passwords are masked)
 
 Two controls in the top bar keep the administrator's choice in the browser (`localStorage`, never sent to the server),
 across reloads, tabs and browser restarts:
 
-- **Refresh toggle** - refreshes the current page every 10 seconds ("refresh every 10 sec") or not ("refresh
-  disabled"). Switching it on refreshes the page right away.
-- **Theme button** - switches between the light theme (Bootswatch "spacelab") and a dark theme (Bootswatch "darkly"); it
-  names the theme it switches to. Until a theme is chosen, the UI follows the system's light or dark setting.
+- **Refresh** - refreshes the current page every 5, 10, 30 or 60 seconds, or not at all, plus a "refresh now" button
+  and how long ago the page was updated. Nothing is refreshed while the browser tab is hidden.
+- **Theme** - device (follows the operating system's light or dark setting, the default), light or dark.
+
+The UI is built with Preact and htm as plain ES modules (no build step), Chart.js for charts, cronstrue for cron
+expressions in words and Lucide icons; all of them are bundled in the jar (see `webadmin/vendor/README.md`). Its
+charts and statistics need a `JobExecutionLogService` that provides statistics: both built-in ones do.
 
 Configure the UI:
 
@@ -701,22 +710,25 @@ quartz-plus:
 All endpoints are mounted at the `api-uri` prefix (default: `/scheduler`). Full OpenAPI/Swagger annotations are included
 for auto-generated API documentation.
 
-| Method   | Path                         | Description                                                                          |
-|----------|------------------------------|--------------------------------------------------------------------------------------|
-| `GET`    | `/scheduler`                 | Scheduler metadata and info                                                          |
-| `GET`    | `/scheduler/groups`          | List all trigger group names                                                         |
-| `GET`    | `/scheduler/triggers`        | List all triggers (optional `?groupName=`)                                           |
-| `GET`    | `/scheduler/trigger`         | Get a specific trigger (`?groupName=&triggerName=`)                                  |
-| `DELETE` | `/scheduler/trigger`         | Remove a trigger (`?groupName=&triggerName=`)                                        |
-| `GET`    | `/scheduler/jobs`            | List jobs (optional `?groupName=`, `?jobName=`, `?instanceClass=`)                   |
-| `POST`   | `/scheduler/trigger/execute` | Immediately fire a job with optional JSON body                                       |
-| `POST`   | `/scheduler/trigger/pause`   | Pause a trigger (`?groupName=&triggerName=`)                                         |
-| `POST`   | `/scheduler/trigger/resume`  | Resume a paused trigger (`?groupName=&triggerName=`)                                 |
-| `GET`    | `/scheduler/log`             | Paginated execution log (`?pageSize=&currentPage=&groupName=&jobName=&triggerName=`) |
-| `GET`    | `/scheduler/nodes`           | List cluster execution nodes                                                         |
-| `GET`    | `/scheduler/metrics`         | Job execution metrics                                                                |
-| `GET`    | `/scheduler/config`          | Active configuration properties (passwords masked)                                   |
-| `PUT`    | `/scheduler/create`          | Dynamically register a new job/trigger                                               |
+| Method   | Path                            | Description                                                                          |
+|----------|---------------------------------|--------------------------------------------------------------------------------------|
+| `GET`    | `/scheduler`                    | Scheduler metadata and info                                                          |
+| `GET`    | `/scheduler/groups`             | List all trigger group names                                                         |
+| `GET`    | `/scheduler/triggers`           | List all triggers (optional `?groupName=`)                                           |
+| `GET`    | `/scheduler/trigger`            | Get a specific trigger (`?groupName=&triggerName=`)                                  |
+| `DELETE` | `/scheduler/trigger`            | Remove a trigger (`?groupName=&triggerName=`)                                        |
+| `GET`    | `/scheduler/jobs`               | List jobs (optional `?groupName=`, `?jobName=`, `?instanceClass=`)                   |
+| `POST`   | `/scheduler/trigger/execute`    | Immediately fire a job with optional JSON body                                       |
+| `POST`   | `/scheduler/trigger/pause`      | Pause a trigger (`?groupName=&triggerName=`)                                         |
+| `POST`   | `/scheduler/trigger/resume`     | Resume a paused trigger (`?groupName=&triggerName=`)                                 |
+| `GET`    | `/scheduler/log`                | Paginated execution log (`?pageSize=&currentPage=&groupName=&jobName=&triggerName=`) |
+| `GET`    | `/scheduler/log/timeline`       | Latest runs in a time window, without job data and output                            |
+| `GET`    | `/scheduler/stats`              | Runs added up per time bucket (`?from=&to=&bucketSeconds=&groupName=&jobName=`)      |
+| `GET`    | `/scheduler/trigger/fire-times` | Next fire times of a trigger (`?groupName=&triggerName=&count=`)                     |
+| `GET`    | `/scheduler/nodes`              | List cluster execution nodes                                                         |
+| `GET`    | `/scheduler/metrics`            | Job execution metrics                                                                |
+| `GET`    | `/scheduler/config`             | Active configuration properties (passwords masked)                                   |
+| `PUT`    | `/scheduler/create`             | Dynamically register a new job/trigger                                               |
 
 ### Execute a Job Immediately
 
@@ -745,6 +757,30 @@ initialised. A host that never creates jobs at run time can switch the endpoint 
 
 On `GET /scheduler/jobs`, `instanceClass` is matched against the job classes the scheduler already knows (scheduled
 jobs and registered job classes) and is never loaded; an unknown class name is answered `400`.
+
+### Execution history and statistics
+
+Times are ISO-8601 instants, e.g. `2026-11-27T10:00:00Z`; a range `[from, to)` includes `from` and excludes `to`.
+
+- `GET /scheduler/log` also takes `success=true|false` (only successful or failed runs), `from` and `to` (only runs
+  that finished in the range). Entries are always newest first.
+- `GET /scheduler/log/timeline?from=&to=&groupName=&jobName=&limit=` returns the latest runs that finished in the range
+  (default: the last hour), newest first, at most `limit` (default 500, at most 1000), without `jsonData` and
+  `stackTrace`. A run started `duration` milliseconds before its `createTime`.
+- `GET /scheduler/stats?from=&to=&bucketSeconds=&groupName=&jobName=` adds the runs of the range (default: the last 24
+  hours) up per bucket of `bucketSeconds` (default 3600): one entry per bucket, oldest first, also for buckets without
+  runs, with `start`, `end`, `successCount`, `failureCount`, `totalDuration`, `averageDuration` and `maxDuration`
+  (milliseconds). The range may be at most 31 days and hold at most 200 buckets; otherwise the answer is `400`.
+- `GET /scheduler/trigger/fire-times?groupName=&triggerName=&count=` returns the next `count` (default 5, at most 50)
+  fire times of a trigger, skipping times its calendar excludes; a paused trigger fires at them only once resumed.
+
+```bash
+curl "http://localhost:8080/scheduler/stats?from=2026-11-27T00:00:00Z&to=2026-11-28T00:00:00Z&bucketSeconds=3600&groupName=ExampleGroup"
+```
+
+A host that provides its own `JobExecutionLogService` keeps working without changes: the result and time filters and
+the statistics are default methods that answer `501` until the host's implementation overrides
+`getJobExecutionLogList(..., success, from, to)` and `getJobExecutionStats(...)`.
 
 ---
 
