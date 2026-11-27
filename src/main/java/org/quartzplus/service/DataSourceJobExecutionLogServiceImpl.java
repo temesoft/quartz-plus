@@ -1,14 +1,15 @@
 package org.quartzplus.service;
 
-import com.google.common.collect.Lists;
 import jakarta.annotation.Nullable;
 import org.quartzplus.domain.JobExecutionLog;
+import org.quartzplus.domain.JobExecutionStats;
 import org.quartzplus.domain.QuartzExecutionNode;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.SingleColumnRowMapper;
 
@@ -17,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +46,13 @@ public class DataSourceJobExecutionLogServiceImpl implements JobExecutionLogServ
     private static final String SQL_EXEC_NODES_SELECT = "SCHEDULER_STATE ORDER BY INSTANCE_NAME ASC";
     private static final String SQL_EXEC_LOG_DELETE = "JOB_EXECUTION_LOG WHERE createTime < ?";
 
+    private static final String SQL_EXEC_LOG_STATS_SELECT = " AS bucket, COUNT(id) AS runs, "
+            + "SUM(CASE WHEN success THEN 1 ELSE 0 END) AS successes, SUM(duration) AS duration_sum, "
+            + "MAX(duration) AS duration_max FROM ";
+    private static final String SQL_EXEC_LOG_STATS_WHERE = "JOB_EXECUTION_LOG WHERE createTime >= ? AND createTime < ?";
+
     private static final String SQL_SELECT_PREFIX = "SELECT * FROM ";
+    private static final String SQL_SELECT_COUNT_PREFIX = "SELECT count(id) FROM ";
     private static final String SQL_INSERT_PREFIX = "INSERT INTO ";
     private static final String SQL_DELETE_PREFIX = "DELETE FROM ";
 
@@ -80,65 +88,102 @@ public class DataSourceJobExecutionLogServiceImpl implements JobExecutionLogServ
                                                         @Nullable final String jobName,
                                                         @Nullable final String triggerName,
                                                         @Nullable final String instanceClass) {
-        var sql = SQL_SELECT_PREFIX + tablePrefix + SQL_EXEC_LOG_SELECT_PAGED_1;
-        final var argumentList = Lists.<Object>newArrayList();
-        final var typeList = Lists.<Integer>newArrayList();
+        return getJobExecutionLogList(pageSize, currentPage, groupName, jobName, triggerName, instanceClass, null, null, null);
+    }
 
-        if (groupName != null || jobName != null || triggerName != null || instanceClass != null) {
-            sql += " WHERE ";
-        }
-
-        if (groupName != null) {
-            sql += " groupName = ? ";
-            argumentList.add(groupName);
-            typeList.add(Types.VARCHAR);
-        }
-        if (jobName != null) {
-            if (!argumentList.isEmpty()) {
-                sql += " AND";
-            }
-            sql += " jobName = ? ";
-            argumentList.add(jobName);
-            typeList.add(Types.VARCHAR);
-        }
-        if (triggerName != null) {
-            if (!argumentList.isEmpty()) {
-                sql += " AND";
-            }
-            sql += " triggerName = ? ";
-            argumentList.add(triggerName);
-            typeList.add(Types.VARCHAR);
-        }
-        if (instanceClass != null) {
-            if (!argumentList.isEmpty()) {
-                sql += " AND";
-            }
-            sql += " instanceClass = ? ";
-            argumentList.add(instanceClass);
-            typeList.add(Types.VARCHAR);
-        }
-
-        final var argumentListForCount = new ArrayList<>(argumentList);
-        final var typeListForCount = new ArrayList<>(typeList);
-        argumentList.add(pageSize);
-        argumentList.add(currentPage * pageSize);
-        typeList.add(Types.NUMERIC);
-        typeList.add(Types.NUMERIC);
-        final var countSql = sql.replace("SELECT * FROM", "SELECT count(id) FROM");
-        sql += SQL_EXEC_LOG_SELECT_PAGED_2;
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Page<JobExecutionLog> getJobExecutionLogList(final Integer pageSize,
+                                                        final Integer currentPage,
+                                                        @Nullable final String groupName,
+                                                        @Nullable final String jobName,
+                                                        @Nullable final String triggerName,
+                                                        @Nullable final String instanceClass,
+                                                        @Nullable final Boolean success,
+                                                        @Nullable final Instant from,
+                                                        @Nullable final Instant to) {
+        final var conditions = new Conditions()
+                .add("groupName = ?", groupName, Types.VARCHAR)
+                .add("jobName = ?", jobName, Types.VARCHAR)
+                .add("triggerName = ?", triggerName, Types.VARCHAR)
+                .add("instanceClass = ?", instanceClass, Types.VARCHAR)
+                .add("success = ?", success, Types.BOOLEAN)
+                .add("createTime >= ?", from == null ? null : Timestamp.from(from), Types.TIMESTAMP)
+                .add("createTime < ?", to == null ? null : Timestamp.from(to), Types.TIMESTAMP);
+        final var where = conditions.clauses.isEmpty() ? "" : " WHERE " + String.join(" AND ", conditions.clauses);
         final var countResponse = jdbcTemplate.query(
-                countSql,
-                argumentListForCount.toArray(new Object[0]),
-                typeListForCount.stream().mapToInt(Integer::intValue).toArray(),
+                SQL_SELECT_COUNT_PREFIX + tablePrefix + SQL_EXEC_LOG_SELECT_PAGED_1 + where,
+                conditions.arguments.toArray(new Object[0]),
+                conditions.types.stream().mapToInt(Integer::intValue).toArray(),
                 new SingleColumnRowMapper<>(Integer.class)
         ).get(0);
+        conditions.arguments.add(pageSize);
+        conditions.arguments.add(currentPage * pageSize);
+        conditions.types.add(Types.NUMERIC);
+        conditions.types.add(Types.NUMERIC);
         final var response = jdbcTemplate.query(
-                sql,
-                argumentList.toArray(new Object[0]),
-                typeList.stream().mapToInt(Integer::intValue).toArray(),
+                SQL_SELECT_PREFIX + tablePrefix + SQL_EXEC_LOG_SELECT_PAGED_1 + where + SQL_EXEC_LOG_SELECT_PAGED_2,
+                conditions.arguments.toArray(new Object[0]),
+                conditions.types.stream().mapToInt(Integer::intValue).toArray(),
                 new JobExecutionLogRowMapper()
         );
         return new PageImpl<>(response, PageRequest.of(currentPage, pageSize), countResponse);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * One query adds the runs of every bucket up in the database: each bucket is a range of the indexed
+     * {@code createTime} column, so only the runs in {@code [from, to)} are read.</p>
+     */
+    @Override
+    public List<JobExecutionStats> getJobExecutionStats(final Instant from,
+                                                        final Instant to,
+                                                        final Duration bucketSize,
+                                                        @Nullable final String groupName,
+                                                        @Nullable final String jobName) {
+        final var accumulator = new ExecutionStatsAccumulator(from, to, bucketSize);
+        final var filters = new Conditions()
+                .add("groupName = ?", groupName, Types.VARCHAR)
+                .add("jobName = ?", jobName, Types.VARCHAR);
+        final var sql = new StringBuilder();
+        final var arguments = new ArrayList<>();
+        final var types = new ArrayList<Integer>();
+        for (var bucket = 0; bucket < accumulator.bucketCount(); bucket++) {
+            if (bucket > 0) {
+                sql.append(" UNION ALL ");
+            }
+            sql.append("SELECT ").append(bucket).append(SQL_EXEC_LOG_STATS_SELECT).append(tablePrefix)
+                    .append(SQL_EXEC_LOG_STATS_WHERE);
+            filters.clauses.forEach(clause -> sql.append(" AND ").append(clause));
+            arguments.add(Timestamp.from(accumulator.bucketStart(bucket)));
+            arguments.add(Timestamp.from(accumulator.bucketEnd(bucket)));
+            types.add(Types.TIMESTAMP);
+            types.add(Types.TIMESTAMP);
+            arguments.addAll(filters.arguments);
+            types.addAll(filters.types);
+        }
+        jdbcTemplate.query(
+                sql.toString(),
+                arguments.toArray(new Object[0]),
+                types.stream().mapToInt(Integer::intValue).toArray(),
+                (RowCallbackHandler) rs -> {
+                    final var runs = rs.getLong("runs");
+                    if (runs > 0) {
+                        final var successes = rs.getLong("successes");
+                        accumulator.addBucket(
+                                rs.getInt("bucket"),
+                                successes,
+                                runs - successes,
+                                rs.getLong("duration_sum"),
+                                rs.getLong("duration_max")
+                        );
+                    }
+                }
+        );
+        return accumulator.toStats();
     }
 
     /**
@@ -250,6 +295,24 @@ public class DataSourceJobExecutionLogServiceImpl implements JobExecutionLogServ
     @Override
     public String getTablePrefix() {
         return tablePrefix;
+    }
+
+    /**
+     * SQL conditions with their arguments; a condition whose value is {@code null} is left out.
+     */
+    private static final class Conditions {
+        private final List<String> clauses = new ArrayList<>();
+        private final List<Object> arguments = new ArrayList<>();
+        private final List<Integer> types = new ArrayList<>();
+
+        private Conditions add(final String clause, @Nullable final Object value, final int type) {
+            if (value != null) {
+                clauses.add(clause);
+                arguments.add(value);
+                types.add(type);
+            }
+            return this;
+        }
     }
 
     /**

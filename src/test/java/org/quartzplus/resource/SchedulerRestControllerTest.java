@@ -20,6 +20,8 @@ import org.quartzplus.annotation.TriggerSpec;
 import org.quartzplus.annotation.TriggerState;
 import org.quartzplus.configuration.QuartzPlusAutoConfiguration;
 import org.quartzplus.configuration.QuartzPlusFlywayConfiguration;
+import org.quartzplus.domain.JobExecutionLog;
+import org.quartzplus.service.JobExecutionLogService;
 import org.quartzplus.service.JobsCollection;
 import org.quartzplus.test.EmbeddedPortRetriever;
 import org.quartzplus.test.TestCoreConfigImport;
@@ -38,6 +40,9 @@ import org.springframework.http.RequestEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -361,6 +366,120 @@ class SchedulerRestControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(scheduler.getJobDetail(new JobKey(jobName, groupName))).isNotNull();
         assertThat(INITIALISED_CLASSES).isEmpty();
+    }
+
+    @Test
+    void testExecutionLogFilteredByResultAndTimeNewestFirst() {
+        final var group = "LogFilterTestGroup";
+        final var now = Instant.now();
+        insertLog(group, "FilterJob", true, 10, now.minus(Duration.ofMinutes(50)));
+        insertLog(group, "FilterJob", false, 20, now.minus(Duration.ofMinutes(40)));
+        insertLog(group, "FilterJob", true, 30, now.minus(Duration.ofMinutes(5)));
+
+        final var all = (Map<String, Object>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/log?groupName=" + group, Map.class);
+        assertThat(all.get("totalElements")).isEqualTo(3);
+        assertThat(((List<Map<String, Object>>) all.get("content")).stream().map(log -> log.get("duration")))
+                .containsExactly(30, 20, 10);
+
+        final var failures = (Map<String, Object>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/log?success=false&groupName=" + group, Map.class);
+        assertThat(failures.get("totalElements")).isEqualTo(1);
+        assertThat(((List<Map<String, Object>>) failures.get("content")).get(0).get("success")).isEqualTo(false);
+
+        final var since = (Map<String, Object>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/log?groupName=" + group + "&from=" + now.minus(Duration.ofMinutes(45)), Map.class);
+        assertThat(since.get("totalElements")).isEqualTo(2);
+
+        final var window = (Map<String, Object>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/log?groupName=" + group + "&from=" + now.minus(Duration.ofMinutes(45))
+                + "&to=" + now.minus(Duration.ofMinutes(30)), Map.class);
+        assertThat(window.get("totalElements")).isEqualTo(1);
+    }
+
+    @Test
+    void testExecutionStatsAddsRunsUpPerBucket() {
+        final var group = "StatsTestGroup";
+        final var from = Instant.now().minus(Duration.ofHours(2)).truncatedTo(ChronoUnit.MINUTES);
+        insertLog(group, "StatsJob", true, 100, from.plus(Duration.ofMinutes(1)));
+        insertLog(group, "StatsJob", false, 300, from.plus(Duration.ofMinutes(2)));
+        insertLog(group, "StatsJob", true, 50, from.plus(Duration.ofMinutes(11)));
+        insertLog(group, "OtherJob", true, 1000, from.plus(Duration.ofMinutes(3)));
+
+        final var buckets = (List<Map<String, Object>>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/stats?bucketSeconds=600&groupName=" + group + "&jobName=StatsJob"
+                + "&from=" + from + "&to=" + from.plus(Duration.ofMinutes(25)), List.class);
+
+        assertThat(buckets).hasSize(3);
+        assertThat(Instant.parse((String) buckets.get(0).get("start"))).isEqualTo(from);
+        assertThat(Instant.parse((String) buckets.get(2).get("end"))).isEqualTo(from.plus(Duration.ofMinutes(25)));
+        assertThat(buckets.get(0)).containsEntry("successCount", 1).containsEntry("failureCount", 1)
+                .containsEntry("totalDuration", 400).containsEntry("maxDuration", 300).containsEntry("averageDuration", 200);
+        assertThat(buckets.get(1)).containsEntry("successCount", 1).containsEntry("failureCount", 0)
+                .containsEntry("maxDuration", 50);
+        assertThat(buckets.get(2)).containsEntry("successCount", 0).containsEntry("failureCount", 0);
+
+        final var wholeGroup = (List<Map<String, Object>>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/stats?bucketSeconds=1800&groupName=" + group + "&from=" + from
+                + "&to=" + from.plus(Duration.ofMinutes(30)), List.class);
+        assertThat(wholeGroup).hasSize(1);
+        assertThat(wholeGroup.get(0)).containsEntry("successCount", 3).containsEntry("maxDuration", 1000);
+    }
+
+    @Test
+    void testExecutionStatsRefusesBadRanges() {
+        final var now = Instant.now();
+        for (final var query : List.of(
+                "from=" + now + "&to=" + now.minusSeconds(60),
+                "from=" + now.minus(Duration.ofDays(40)) + "&to=" + now,
+                "from=" + now.minus(Duration.ofDays(1)) + "&to=" + now + "&bucketSeconds=60",
+                "bucketSeconds=0"
+        )) {
+            final var response = restTemplate.getForEntity(URL_PREFIX + port + SCHEDULER_URI + "/stats?" + query, Map.class);
+            assertThat(response.getStatusCode()).as(query).isEqualTo(BAD_REQUEST);
+            assertThat(response.getBody()).as(query).containsKey("message");
+        }
+    }
+
+    @Test
+    void testExecutionTimelineLeavesOutJobDataAndOutput() {
+        final var group = "TimelineTestGroup";
+        final var id = insertLog(group, "TimelineJob", false, 75, Instant.now().minus(Duration.ofMinutes(10)));
+
+        final var runs = (List<Map<String, Object>>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/log/timeline?groupName=" + group, List.class);
+
+        assertThat(runs).hasSize(1);
+        assertThat(runs.get(0)).containsEntry("id", id).containsEntry("duration", 75).containsEntry("success", false);
+        assertThat(runs.get(0).get("stackTrace")).isNull();
+        assertThat(runs.get(0).get("jsonData")).isNull();
+        assertThat(restTemplate.getForEntity(URL_PREFIX + port + SCHEDULER_URI + "/log/timeline?limit=0", Map.class)
+                .getStatusCode()).isEqualTo(BAD_REQUEST);
+    }
+
+    @Test
+    void testNextFireTimesOfTrigger() {
+        final var fireTimes = (List<String>) restTemplate.getForObject(URL_PREFIX + port + SCHEDULER_URI
+                + "/trigger/fire-times?count=3&groupName=" + GROUP_NAME + "&triggerName=" + TEST_JOB_TRIGGER, List.class);
+
+        assertThat(fireTimes).hasSize(3);
+        final var times = fireTimes.stream().map(Instant::parse).toList();
+        assertThat(Duration.between(times.get(0), times.get(1))).isEqualTo(Duration.ofSeconds(10));
+        assertThat(Duration.between(times.get(1), times.get(2))).isEqualTo(Duration.ofSeconds(10));
+        assertThat(restTemplate.getForEntity(URL_PREFIX + port + SCHEDULER_URI
+                + "/trigger/fire-times?groupName=" + GROUP_NAME + "&triggerName=does-not-exist", String.class)
+                .getStatusCode()).isEqualTo(NOT_FOUND);
+        assertThat(restTemplate.getForEntity(URL_PREFIX + port + SCHEDULER_URI
+                + "/trigger/fire-times?count=0&groupName=" + GROUP_NAME + "&triggerName=" + TEST_JOB_TRIGGER, String.class)
+                .getStatusCode()).isEqualTo(BAD_REQUEST);
+    }
+
+    private static String insertLog(final String group, final String job, final boolean success, final long duration,
+                                    final Instant finished) {
+        final var log = new JobExecutionLog(null, group, job + "-Trigger", job, 5, success, success ? "Ok" : "Failed",
+                "test-instance", TestJob.class.getName(), duration, "stack trace", "{\"key\":\"value\"}", finished);
+        appContext.getBean(JobExecutionLogService.class).insertJobExecutionLog(log);
+        return log.getId();
     }
 
     @Test

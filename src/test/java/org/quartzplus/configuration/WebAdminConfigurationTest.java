@@ -19,6 +19,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -27,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WebAdminConfigurationTest {
 
     private static final String WEB_ADMIN_URI = "/test-scheduler/admin"; // set in test application.properties
+    private static final Pattern MODULE_IMPORT = Pattern.compile("(?:\\bimport|\\bfrom)\\s*[\"']([^\"']+)[\"']");
 
     private static ConfigurableApplicationContext appContext;
     private static int port = -1;
@@ -40,7 +44,7 @@ class WebAdminConfigurationTest {
         assertThat(result).isNotNull().contains("<title>QuartzPlus</title>");
         result = restTemplate.getForObject("http://localhost:" + port + WEB_ADMIN_URI, String.class);
         assertThat(result).isNotNull().contains("<title>QuartzPlus</title>");
-        result = restTemplate.getForObject("http://localhost:" + port + WEB_ADMIN_URI + "/app.js", String.class);
+        result = restTemplate.getForObject("http://localhost:" + port + WEB_ADMIN_URI + "/js/app.js", String.class);
         assertThat(result).isNotNull().hasSizeGreaterThan(3000);
         result = restTemplate.getForObject("http://localhost:" + port + WEB_ADMIN_URI + "/logo.png", String.class);
         assertThat(result).isNotNull();
@@ -90,7 +94,7 @@ class WebAdminConfigurationTest {
                         + "form-action 'self'; frame-ancestors 'none'");
         assertThat(index.getHeader("Cache-Control")).isEqualTo("no-store");
 
-        final var appJs = filter(WEB_ADMIN_URI + "/app.js", true);
+        final var appJs = filter(WEB_ADMIN_URI + "/js/app.js", true);
         assertThat(appJs.getStatus()).isEqualTo(200);
         assertThat(appJs.getContentType()).isEqualTo("application/javascript");
         assertThat(appJs.getHeader("X-Content-Type-Options")).isEqualTo("nosniff");
@@ -120,10 +124,34 @@ class WebAdminConfigurationTest {
                 assertThat(response.getContentAsString()).as(reference).doesNotContain("@import");
             }
         }
-        assertThat(references).contains("theme.js", "vendor/bootstrap/css/bootstrap-darkly.min.css");
-        assertThat(filter(WEB_ADMIN_URI + "/vendor/bootstrap/fonts/glyphicons-halflings-regular.woff2", true).getContentType())
-                .isEqualTo("font/woff2");
+        assertThat(references).contains("theme.js", "style.css", "js/main.js");
         assertThat(filter(WEB_ADMIN_URI + "/vendor/README.md", true).getStatus()).isEqualTo(404);
+    }
+
+    @Test
+    void testUiModulesImportOnlyTheirOwnFilesAndEachIsServed() throws Exception {
+        final var pending = new ArrayDeque<>(List.of("js/main.js"));
+        final var served = new HashSet<String>();
+        while (!pending.isEmpty()) {
+            final var module = pending.poll();
+            if (!served.add(module)) {
+                continue;
+            }
+            final var response = filter(WEB_ADMIN_URI + "/" + module, true);
+            assertThat(response.getStatus()).as(module).isEqualTo(200);
+            assertThat(response.getContentType()).as(module).isEqualTo("application/javascript");
+            final var specifiers = MODULE_IMPORT.matcher(response.getContentAsString()).results()
+                    .map(match -> match.group(1))
+                    .toList();
+            for (final var specifier : specifiers) {
+                assertThat(specifier).as(module).startsWith(".").doesNotContain("//").doesNotContain(":");
+                pending.add(URI.create("/" + module).resolve(specifier).getPath().substring(1));
+            }
+        }
+        assertThat(served).contains("js/app.js", "vendor/preact/preact.js", "vendor/preact/hooks.js", "vendor/htm/htm.js");
+        final var icons = filter(WEB_ADMIN_URI + "/vendor/lucide/icons.svg", true);
+        assertThat(icons.getStatus()).isEqualTo(200);
+        assertThat(icons.getContentType()).isEqualTo("image/svg+xml");
     }
 
     @Test

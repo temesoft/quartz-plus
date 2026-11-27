@@ -41,6 +41,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,6 +52,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -96,6 +98,15 @@ public class SchedulerRestController {
     private static final String CREATE_URI = "/create";
     private static final String METRICS_URI = "/metrics";
     private static final String CONFIG_URI = "/config";
+    private static final String LOGS_TIMELINE_URI = "/log/timeline";
+    private static final String STATS_URI = "/stats";
+    private static final String TRIGGER_FIRE_TIMES_URI = "/trigger/fire-times";
+    private static final String MESSAGE = "message";
+    private static final int MAX_TIMELINE_RUNS = 1000;
+    private static final Duration MAX_STATS_RANGE = Duration.ofDays(31);
+    private static final int MAX_STATS_BUCKETS = 200;
+    private static final int MAX_FIRE_TIMES = 50;
+    private static final int MAX_FIRE_TIMES_CHECKED = 10_000;
     private static final String EMPTY_JSON = "{}";
     private static final String METRIC_PREFIX_WITH_DOT = Job.METRIC_PREFIX + ".";
 
@@ -330,7 +341,8 @@ public class SchedulerRestController {
     }
 
     @RequestMapping(value = LOGS_URI, method = GET)
-    @Operation(description = "Returns an ordered, paginated list of latest JobExecutionLog entries", method = "GET")
+    @Operation(description = "Returns an ordered, paginated list of latest JobExecutionLog entries, optionally only "
+            + "successful or failed runs (success) and runs that finished in [from, to)", method = "GET")
     public ResponseEntity<?> getHistoryList(
             @RequestParam(value = Constants.PARAMETER_NAME_PAGE_SIZE, defaultValue = "10") final Integer pageSize,
             @RequestParam(value = Constants.PARAMETER_NAME_CURRENT_PAGE, defaultValue = "0") final Integer currentPage,
@@ -338,7 +350,10 @@ public class SchedulerRestController {
             @RequestParam(value = Constants.PARAMETER_NAME_JOB_NAME, required = false) final String jobName,
             @RequestParam(value = Constants.PARAMETER_NAME_TRIGGER_NAME, required = false) final String triggerName,
             @RequestParam(value = Constants.PARAMETER_NAME_INSTANCE_CLASS, required = false) final String instanceClass,
-            @RequestParam(value = Constants.PARAMETER_NAME_ID, required = false) final String jobExecutionLogId
+            @RequestParam(value = Constants.PARAMETER_NAME_ID, required = false) final String jobExecutionLogId,
+            @RequestParam(value = Constants.PARAMETER_NAME_SUCCESS, required = false) final Boolean success,
+            @RequestParam(value = Constants.PARAMETER_NAME_FROM, required = false) final Instant from,
+            @RequestParam(value = Constants.PARAMETER_NAME_TO, required = false) final Instant to
     ) {
         if (isNotBlank(jobExecutionLogId)) {
             final var jobExecutionLog = jobExecutionLogService.getJobExecutionLog(jobExecutionLogId);
@@ -355,9 +370,115 @@ public class SchedulerRestController {
                             groupName,
                             jobName,
                             triggerName,
-                            instanceClass
+                            instanceClass,
+                            success,
+                            from,
+                            to
                     ), OK);
         }
+    }
+
+    @GetMapping(LOGS_TIMELINE_URI)
+    @Operation(summary = "Returns the latest runs that finished in [from, to) (default: the last hour), newest first, "
+            + "without their job data and output", method = "GET")
+    public ResponseEntity<?> getExecutionTimeline(
+            @RequestParam(value = Constants.PARAMETER_NAME_FROM, required = false) final Instant from,
+            @RequestParam(value = Constants.PARAMETER_NAME_TO, required = false) final Instant to,
+            @RequestParam(value = Constants.PARAMETER_NAME_GROUP_NAME, required = false) final String groupName,
+            @RequestParam(value = Constants.PARAMETER_NAME_JOB_NAME, required = false) final String jobName,
+            @RequestParam(value = Constants.PARAMETER_NAME_LIMIT, defaultValue = "500") final int limit
+    ) {
+        final var end = to == null ? Instant.now() : to;
+        final var start = from == null ? end.minus(Duration.ofHours(1)) : from;
+        if (!start.isBefore(end)) {
+            return badRequest("from must be before to");
+        }
+        if (limit < 1 || limit > MAX_TIMELINE_RUNS) {
+            return badRequest("limit must be between 1 and " + MAX_TIMELINE_RUNS);
+        }
+        final var runs = jobExecutionLogService
+                .getJobExecutionLogList(limit, 0, groupName, jobName, null, null, null, start, end)
+                .getContent()
+                .stream()
+                .map(log -> new JobExecutionLog(log.getId(), log.getGroupName(), log.getTriggerName(), log.getJobName(),
+                        log.getPriority(), log.getSuccess(), log.getErrorMessage(), log.getFireInstanceId(),
+                        log.getInstanceClass(), log.getDuration(), null, null, log.getCreateTime()))
+                .toList();
+        return new ResponseEntity<>(runs, OK);
+    }
+
+    @GetMapping(STATS_URI)
+    @Operation(summary = "Returns the runs that finished in [from, to) (default: the last 24 hours), added up per "
+            + "bucket of bucketSeconds (default: one hour); optionally only one group or job", method = "GET")
+    public ResponseEntity<?> getExecutionStats(
+            @RequestParam(value = Constants.PARAMETER_NAME_FROM, required = false) final Instant from,
+            @RequestParam(value = Constants.PARAMETER_NAME_TO, required = false) final Instant to,
+            @RequestParam(value = Constants.PARAMETER_NAME_BUCKET_SECONDS, defaultValue = "3600") final long bucketSeconds,
+            @RequestParam(value = Constants.PARAMETER_NAME_GROUP_NAME, required = false) final String groupName,
+            @RequestParam(value = Constants.PARAMETER_NAME_JOB_NAME, required = false) final String jobName
+    ) {
+        final var end = to == null ? Instant.now() : to;
+        final var start = from == null ? end.minus(Duration.ofDays(1)) : from;
+        if (!start.isBefore(end)) {
+            return badRequest("from must be before to");
+        }
+        final var range = Duration.between(start, end);
+        if (range.compareTo(MAX_STATS_RANGE) > 0) {
+            return badRequest("The range may be at most " + MAX_STATS_RANGE.toDays() + " days");
+        }
+        if (bucketSeconds < 1) {
+            return badRequest("bucketSeconds must be positive");
+        }
+        if ((range.toMillis() + bucketSeconds * 1000 - 1) / (bucketSeconds * 1000) > MAX_STATS_BUCKETS) {
+            return badRequest("At most " + MAX_STATS_BUCKETS + " buckets: choose a larger bucketSeconds");
+        }
+        return new ResponseEntity<>(jobExecutionLogService.getJobExecutionStats(
+                start,
+                end,
+                Duration.ofSeconds(bucketSeconds),
+                isNotBlank(groupName) ? groupName : null,
+                isNotBlank(jobName) ? jobName : null
+        ), OK);
+    }
+
+    @GetMapping(TRIGGER_FIRE_TIMES_URI)
+    @Operation(summary = "Returns the next fire times of a trigger, skipping times its calendar excludes", method = "GET")
+    public ResponseEntity<?> getNextFireTimes(
+            @RequestParam(value = PARAMETER_NAME_GROUP_NAME) final String groupName,
+            @RequestParam(value = PARAMETER_NAME_TRIGGER_NAME) final String triggerName,
+            @RequestParam(value = Constants.PARAMETER_NAME_COUNT, defaultValue = "5") final int count
+    ) throws SchedulerException, JobTriggerNotFoundException {
+        if (count < 1 || count > MAX_FIRE_TIMES) {
+            return badRequest("count must be between 1 and " + MAX_FIRE_TIMES);
+        }
+        final var key = new TriggerKey(triggerName, groupName);
+        final var trigger = scheduler.getTrigger(key);
+        if (trigger == null) {
+            throw new JobTriggerNotFoundException();
+        }
+        final var calendar = trigger.getCalendarName() == null ? null : scheduler.getCalendar(trigger.getCalendarName());
+        final var result = new ArrayList<Instant>();
+        var next = trigger.getNextFireTime();
+        // a calendar may exclude many fire times in a row; the bound keeps an all-excluding calendar from looping
+        for (var checked = 0; next != null && result.size() < count && checked < MAX_FIRE_TIMES_CHECKED; checked++) {
+            if (calendar == null || calendar.isTimeIncluded(next.getTime())) {
+                result.add(next.toInstant());
+            }
+            next = trigger.getFireTimeAfter(next);
+        }
+        return new ResponseEntity<>(result, OK);
+    }
+
+    /**
+     * Answers {@code 501} when the host's {@link JobExecutionLogService} cannot filter or aggregate as asked.
+     */
+    @ExceptionHandler(UnsupportedOperationException.class)
+    public ResponseEntity<Map<String, String>> handleUnsupported(final UnsupportedOperationException e) {
+        return new ResponseEntity<>(Map.of(MESSAGE, String.valueOf(e.getMessage())), HttpStatus.NOT_IMPLEMENTED);
+    }
+
+    private static ResponseEntity<Map<String, String>> badRequest(final String message) {
+        return new ResponseEntity<>(Map.of(MESSAGE, message), BAD_REQUEST);
     }
 
     @RequestMapping(value = NODES_URI, method = GET)

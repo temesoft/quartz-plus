@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proposal #8 - Improve the UI / UX - decisions</title>
+<style>
+:root{
+  --pg:#0d1117;--card:#161b22;--card2:#1c2230;--line:#30363d;--tx:#e6edf3;--mu:#8b949e;--ac:#58a6ff;
+  --ok:#3fb950;--warn:#d29922;--bad:#f85149;--rec:#238636;
+}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:var(--pg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:96px}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px}
+h1{font-size:26px;margin:0 0 6px}
+h2{font-size:19px;margin:0}
+p{margin:8px 0}
+code{background:#21262d;border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:.88em}
+a{color:var(--ac)}
+.lead{color:var(--mu);max-width:860px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin:18px 0}
+.fact{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.fact b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin-bottom:4px}
+.notice{border:1px solid #9e6a03;background:#2a1f05;border-radius:10px;padding:12px 14px;margin:14px 0}
+.notice b{color:#e3b341}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 6px}
+.toc a{font-size:12.5px;text-decoration:none;color:var(--mu);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.toc a.done{color:var(--ok);border-color:#1f6f36}
+.q{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:22px 0;scroll-margin-top:12px}
+.q-head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.q-num{font-size:12px;font-weight:700;color:var(--ac);border:1px solid #1f4f86;border-radius:6px;padding:1px 8px}
+.q-kind{font-size:12px;color:var(--mu)}
+.q-ctx{color:#c9d1d9;max-width:900px}
+.recbox{border-left:3px solid var(--rec);background:#11261a;border-radius:0 8px 8px 0;padding:9px 13px;margin:12px 0}
+.recbox b{color:var(--ok)}
+.compbox{border-left:3px solid #6e7681;background:#1a1f27;border-radius:0 8px 8px 0;padding:9px 13px;margin:12px 0;color:#c9d1d9;font-size:14px}
+.opts{display:grid;gap:10px;margin-top:14px}
+.opt{display:block;border:1px solid var(--line);border-radius:11px;padding:12px 14px;background:var(--card2);cursor:pointer;position:relative}
+.opt:hover{border-color:#484f58}
+.opt.sel{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac) inset}
+.opt input[type=radio],.opt input[type=checkbox]{position:absolute;opacity:0;pointer-events:none}
+.o-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.o-key{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-weight:700;background:#21262d;border:1px solid var(--line);flex:none}
+.opt.sel .o-key{background:var(--ac);color:#04121f;border-color:var(--ac)}
+.o-name{font-weight:650}
+.o-badge{font-size:11px;font-weight:700;background:var(--rec);color:#fff;border-radius:999px;padding:1px 8px}
+.o-later{font-size:11px;font-weight:700;background:#30363d;color:#c9d1d9;border-radius:999px;padding:1px 8px}
+.o-w{margin-left:auto;display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums;font-weight:650}
+.o-wbar{width:90px;height:6px;border-radius:3px;background:#21262d;overflow:hidden}
+.o-wbar i{display:block;height:100%;background:var(--ac)}
+.o-desc{margin:7px 0 0 36px;color:#c9d1d9;font-size:14px}
+.o-meta{margin:8px 0 0 36px;display:flex;flex-wrap:wrap;gap:6px;font-size:12px}
+.chip{border-radius:6px;padding:2px 8px;border:1px solid var(--line);background:#161b22;color:#c9d1d9}
+.chip b{font-weight:600;color:var(--mu);margin-right:4px}
+.chip.low{border-color:#1f6f36;color:#7ee787}.chip.med{border-color:#7d5a00;color:#e3b341}.chip.high{border-color:#8e1519;color:#ff7b72}
+.o-comp{margin:6px 0 0 36px;font-size:12.5px;color:var(--mu)}
+.other-row{display:flex;gap:8px;align-items:center;margin:7px 0 0 36px}
+input[type=text],textarea{width:100%;background:#0d1117;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+input[type=text]:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:-1px}
+.note{margin-top:12px}
+.note label{display:block;font-size:12px;color:var(--mu);margin-bottom:4px}
+.fig{border:1px dashed #3d444d;border-radius:12px;padding:14px;margin:14px 0;background:#0f141b}
+.fig-cap{font-size:12px;color:var(--mu);margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase}
+.fig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.fig-col h4{margin:0 0 8px;font-size:13px}
+.btn{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--line);background:#21262d;color:var(--tx);padding:7px 14px;cursor:pointer}
+.btn:hover{border-color:#8b949e}
+.btn.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}
+.btn.small{padding:3px 10px;font-size:12px}
+.btn.on{background:var(--ac);border-color:var(--ac);color:#04121f}
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(13,17,23,.94);backdrop-filter:blur(6px);border-top:1px solid var(--line);z-index:10}
+.bar-in{max-width:1120px;margin:0 auto;padding:12px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.bar-in .grow{flex:1;color:var(--mu);font-size:14px}
+#out{height:240px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre}
+.stylebar{display:flex;gap:8px;align-items:center;margin:10px 0;font-size:13px;color:var(--mu)}
+.mkwrap{margin:10px 0 0 0}
+.mkbar{display:flex;gap:6px;align-items:center;margin:10px 0 6px;font-size:12px;color:var(--mu)}
+ul.tight{margin:6px 0;padding-left:20px}
+ul.tight li{margin:2px 0}
+
+/* ------------------------------------------------------------------ mockups */
+.mk{--f:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--num:inherit;--r:8px;--fs:11.5px;--sh:none;
+  font:var(--fs)/1.35 var(--f);background:var(--bg);color:var(--t);border:1px solid #3d444d;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;cursor:default}
+.mk svg{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mk-top{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;background:var(--top);color:var(--topt);border-bottom:1px solid var(--bd)}
+.mk-logo{display:flex;align-items:center;gap:7px;font-weight:700;font-size:1.1em}
+.mk-logo i{width:16px;height:16px;border-radius:5px;background:var(--a);display:inline-block}
+.mk-sp{flex:1}
+.mk-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:var(--r);border:1px solid color-mix(in srgb,currentColor 24%,transparent);font-size:.92em}
+.mk-seg{display:inline-flex;border:1px solid color-mix(in srgb,currentColor 24%,transparent);border-radius:var(--r);overflow:hidden}
+.mk-seg span{padding:3px 6px;display:flex;align-items:center;gap:4px}
+.mk-seg span.on{background:var(--as);color:var(--a)}
+.mk-body{display:flex}
+.mk-nav{width:138px;flex:none;background:var(--nav);border-right:1px solid var(--bd);padding:8px 6px;display:flex;flex-direction:column;gap:2px}
+.mk-nav a{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--r);color:var(--navt);text-decoration:none}
+.mk-nav a.on{background:var(--as);color:var(--a);font-weight:650}
+.mk-main{flex:1;min-width:0;padding:12px;display:flex;flex-direction:column;gap:10px}
+.mk-h{display:flex;align-items:baseline;gap:10px;font-size:1.35em;font-weight:700}
+.mk-h small{font-size:.62em;font-weight:400;color:var(--m)}
+.mk-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mk-panel{background:var(--s);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);padding:9px 10px;min-width:0}
+.mk-kpi .l{color:var(--m);display:flex;align-items:center;gap:5px}
+.mk-kpi .v{font-weight:700;font-size:1.75em;line-height:1.2;font-family:var(--num);margin-top:2px}
+.mk-kpi .d{font-size:.88em;color:var(--m)}
+.mk-kpi .d.up{color:var(--ok)}.mk-kpi .d.dn{color:var(--fail)}
+.mk-kico{display:none}
+.mk-row{display:grid;grid-template-columns:1.9fr 1fr;gap:8px}
+.mk-pt{display:flex;align-items:center;gap:8px;font-weight:650;margin-bottom:8px}
+.mk-pt .mk-seg{margin-left:auto;font-weight:400;font-size:.9em}
+.mk-bars{height:86px;display:flex;align-items:flex-end;gap:2px;border-bottom:1px solid var(--bd)}
+.mk-bars div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;height:100%}
+.mk-bars i{display:block;border-radius:2px 2px 0 0;background:var(--a)}
+.mk-bars i.f{background:var(--fail)}
+.mk-ax{display:flex;justify-content:space-between;color:var(--m);font-size:.85em;margin-top:3px;font-family:var(--num)}
+.mk-leg{display:flex;gap:10px;color:var(--m);font-size:.9em;flex-wrap:wrap}
+.mk-leg span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;background:var(--c)}
+.mk-states{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin-bottom:7px}
+.mk-states i{display:block;background:var(--c)}
+.mk-fail{display:flex;gap:6px;align-items:center;padding:4px 0;border-top:1px solid var(--bd);margin-top:6px}
+.mk-fail svg{color:var(--fail)}
+.mk-fail span{color:var(--m);margin-left:auto;font-family:var(--num);font-size:.9em}
+.mk table{width:100%;border-collapse:collapse}
+.mk th{text-align:left;color:var(--m);font-weight:600;font-size:.9em;padding:4px 6px;border-bottom:1px solid var(--bd)}
+.mk td{padding:var(--rowp,5px) 6px;border-bottom:1px solid var(--bd);white-space:nowrap}
+.mk tr:last-child td{border-bottom:0}
+.mk td.n{font-family:var(--num)}
+.mk .st{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 7px;font-size:.9em;font-weight:600;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--c)}
+.mk .st::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
+.mk .act{display:inline-flex;gap:6px;color:var(--m)}
+.mk-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mk-chip{border:1px solid var(--bd);border-radius:999px;padding:2px 8px;color:var(--m);background:var(--s)}
+.mk-chip.on{background:var(--as);color:var(--a);border-color:transparent;font-weight:600}
+.mk-search{display:flex;align-items:center;gap:6px;border:1px solid var(--bd);border-radius:var(--r);padding:3px 8px;color:var(--m);background:var(--s);min-width:150px}
+
+/* style A - Slate Console */
+.mk[data-style=a][data-theme=light]{--bg:#f6f7f9;--s:#fff;--bd:#e3e6ea;--t:#1b1f26;--m:#6b7280;--a:#4f46e5;--as:#eceefe;--ok:#16a34a;--fail:#dc2626;--warn:#d97706;--nav:#fff;--navt:#4b5563;--top:#fff;--topt:#1b1f26;--sh:0 1px 2px rgba(16,24,40,.06)}
+.mk[data-style=a][data-theme=dark]{--bg:#0f1115;--s:#171a21;--bd:#2a2f3a;--t:#e6e8ec;--m:#9aa3b2;--a:#8b93ff;--as:#23264a;--ok:#4ade80;--fail:#f87171;--warn:#fbbf24;--nav:#12151b;--navt:#aab2c0;--top:#12151b;--topt:#e6e8ec}
+/* style B - Dense Ops */
+.mk[data-style=b]{--r:3px;--fs:10.8px;--rowp:3px;--num:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.mk[data-style=b][data-theme=light]{--bg:#f1f2f4;--s:#fff;--bd:#d3d7dd;--t:#24292e;--m:#667085;--a:#1f62e0;--as:#e3ecff;--ok:#1a7f4b;--fail:#cf222e;--warn:#b76e00;--nav:#fff;--navt:#4b5563;--top:#fff;--topt:#24292e}
+.mk[data-style=b][data-theme=dark]{--bg:#111217;--s:#181b1f;--bd:#2c3038;--t:#ccccdc;--m:#8e8ea0;--a:#6e9fff;--as:#1b2a4a;--ok:#73bf69;--fail:#f2495c;--warn:#ff9830;--nav:#181b1f;--navt:#a9adba;--top:#181b1f;--topt:#ccccdc}
+.mk[data-style=b] .mk-body{flex-direction:column}
+.mk[data-style=b] .mk-nav{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--bd);padding:0 8px;gap:0}
+.mk[data-style=b] .mk-nav a{border-radius:0;padding:7px 10px;border-bottom:2px solid transparent}
+.mk[data-style=b] .mk-nav a.on{background:none;border-bottom-color:var(--a)}
+.mk[data-style=b] .mk-main{padding:8px;gap:6px}
+.mk[data-style=b] .mk-kpis,.mk[data-style=b] .mk-row{gap:6px}
+.mk[data-style=b] .mk-panel{padding:7px 8px}
+.mk[data-style=b] .mk-kpi .v{font-size:1.6em}
+.mk[data-style=b] .st{border-radius:2px}
+.mk[data-style=b] .mk-bars i{border-radius:0}
+/* style C - Soft Cards */
+.mk[data-style=c]{--r:14px;--fs:12px;--rowp:7px}
+.mk[data-style=c][data-theme=light]{--bg:#f5f3fb;--s:#fff;--bd:#ebe6f7;--t:#1f1a2e;--m:#746c8a;--a:#7c3aed;--as:#efe7ff;--ok:#0e9f6e;--fail:#e5484d;--warn:#e08a00;--nav:#fff;--navt:#746c8a;--top:#f5f3fb;--topt:#1f1a2e;--sh:0 6px 18px rgba(80,50,160,.10)}
+.mk[data-style=c][data-theme=dark]{--bg:#14121b;--s:#1d1a27;--bd:#2d2940;--t:#ece9f5;--m:#a39bb8;--a:#a78bfa;--as:#2c2350;--ok:#34d399;--fail:#fb7185;--warn:#fbbf24;--nav:#1d1a27;--navt:#a39bb8;--top:#14121b;--topt:#ece9f5;--sh:0 6px 18px rgba(0,0,0,.35)}
+.mk[data-style=c] .mk-top{border-bottom:0}
+.mk[data-style=c] .mk-nav{width:50px;border-right:0;margin:0 0 10px 10px;border-radius:16px;box-shadow:var(--sh);align-items:center;gap:6px;padding:10px 0}
+.mk[data-style=c] .mk-nav a{padding:8px;border-radius:12px}
+.mk[data-style=c] .mk-nav a span{display:none}
+.mk[data-style=c] .mk-nav a.on{background:var(--a);color:#fff}
+.mk[data-style=c] .mk-nav svg{width:16px;height:16px}
+.mk[data-style=c] .mk-panel{border-color:transparent;padding:12px 14px}
+.mk[data-style=c] .mk-kico{display:grid;place-items:center;width:24px;height:24px;border-radius:8px;background:var(--as);color:var(--a)}
+.mk[data-style=c] .mk-bars i{border-radius:4px}
+.mk[data-style=c] .mk-bars{gap:3px}
+/* style D - Navy Classic */
+.mk[data-style=d]{--r:4px}
+.mk[data-style=d][data-theme=light]{--bg:#fff;--s:#fff;--bd:#dde1e6;--t:#2b2f36;--m:#737b87;--a:#2f5fb3;--as:#e6eefb;--ok:#3c9a47;--fail:#cd3b3b;--warn:#d98c1f;--nav:#f5f5f7;--navt:#5d6470;--top:#222266;--topt:#fff}
+.mk[data-style=d][data-theme=dark]{--bg:#1c1d22;--s:#24262d;--bd:#3a3d47;--t:#e3e5ea;--m:#a0a6b2;--a:#7ea6e6;--as:#27344d;--ok:#5cb868;--fail:#e86a6a;--warn:#e6a94a;--nav:#22232a;--navt:#b3b8c2;--top:#16163a;--topt:#fff}
+.mk[data-style=d] .mk-logo i{background:#fff;border-radius:50%}
+.mk[data-style=d] .mk-nav a.on{background:var(--a);color:#fff}
+.mk[data-style=d] .mk-top .mk-seg span.on{background:rgba(255,255,255,.22);color:#fff}
+.mk[data-style=d] tbody tr:nth-child(odd){background:color-mix(in srgb,var(--m) 8%,transparent)}
+
+.navmock{background:#12151b;border:1px solid #2a2f3a;border-radius:10px;padding:8px;font-size:13px}
+.navmock div{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;color:#aab2c0}
+.navmock div.on{background:#23264a;color:#8b93ff;font-weight:650}
+.navmock div.sub{padding-left:30px;font-size:12px;color:#7d8590}
+.navmock div.new::after{content:"new";font-size:10px;font-weight:700;color:#7ee787;border:1px solid #1f6f36;border-radius:999px;padding:0 6px;margin-left:auto}
+.navmock svg,.themock svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.themock{background:#12151b;border:1px solid #2a2f3a;border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:center;min-height:86px;color:#aab2c0;font-size:13px;gap:8px}
+.themock .seg{display:inline-flex;border:1px solid #2a2f3a;border-radius:8px;overflow:hidden}
+.themock .seg span{padding:6px 9px;display:flex}
+.themock .seg span.on{background:#23264a;color:#8b93ff}
+.themock .ib{border:1px solid #2a2f3a;border-radius:8px;padding:6px 9px;display:flex}
+.themock .menu{border:1px solid #2a2f3a;border-radius:10px;padding:6px;background:#171a21;min-width:150px}
+.themock .menu div{display:flex;gap:8px;align-items:center;padding:4px 8px;border-radius:6px}
+.themock .menu div.on{background:#23264a;color:#8b93ff}
+@media (max-width:760px){.mk-kpis{grid-template-columns:repeat(2,1fr)}.mk-row{grid-template-columns:1fr}.o-w{margin-left:0}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-jobs" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 17H2z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+</svg>
+
+<div class="wrap">
+  <h1>Proposal #8 &mdash; Improve the UI / UX</h1>
+  <p class="lead">Thirteen decisions before any code is written. Each option has a letter, a weight (my estimate of how likely it is the right call &mdash; highest is my recommendation), and its risk, cost and complexity. Pick one per question (or tick several where it says so), add notes if you like, then use <b>Copy all answers</b> at the bottom and paste the result back into the chat.</p>
+
+  <div class="notice"><b>Model note:</b> this planning is being done on <b>Fable 5.2</b>. I will stop after your answers and before implementing, so you can switch to Opus.</div>
+
+  <div class="facts">
+    <div class="fact"><b>What exists today</b>AngularJS 1.8.3 + jQuery + Bootstrap 3.4.1 (Bootswatch spacelab / darkly). Seven menu pages plus two detail pages, all plain tables. No charts. Theme: light / dark button; device is only the fallback before a choice is stored.</div>
+    <div class="fact"><b>Constraints I assume stay</b>Served from the jar by the web admin filter &middot; Maven-only build (no Node) &middot; CSP <code>default-src 'self'</code>, no inline or eval'd scripts &middot; nothing loaded from another host &middot; CSRF meta tags keep working.</div>
+    <div class="fact"><b>Vendored today</b>11 npm packages, about 940 KB under <code>webadmin/vendor/</code>. AngularJS (end of life since January 2022) and Bootstrap 3 (end of life since 2019) no longer get security fixes.</div>
+    <div class="fact"><b>Data available for charts</b><code>/metrics</code>: per-job success / failure counters and duration mean / max &mdash; per instance, reset on restart. <code>/log</code>: paged rows only, each carrying its full stack trace. No time-series endpoint.</div>
+  </div>
+
+  <div class="toc" id="toc"></div>
+  <div id="questions"></div>
+
+  <div class="q" id="found">
+    <div class="q-head"><h2>Noticed while reading (not part of the questions)</h2></div>
+    <ul class="tight">
+      <li><code>webadmin/inc/timeline.html</code> is not routed in <code>app.js</code> and nothing loads it; <code>style.css</code> carries minified timeline CSS pointing at <code>/images/16/*.png</code> files that do not exist. The README still lists a "Timeline" page. A rewrite would drop these; a re-skin (Q1 option C) would leave them unless you say otherwise.</li>
+      <li>The Executions list downloads every row's stack trace and job data (up to ~10 KB each) just to show their byte count; at page size 500 that is several MB per refresh.</li>
+      <li>Dates are formatted with <code>hh</code> (12-hour clock) without AM/PM, so 14:05 and 02:05 look the same.</li>
+      <li>"Cluster nodes" is removed from the menu only after the Scheduler page has been opened once.</li>
+    </ul>
+  </div>
+
+  <div class="q" id="answers">
+    <div class="q-head"><h2>Your answers</h2></div>
+    <p class="q-ctx">This text updates as you choose. The button in the bar below copies it; if the browser blocks clipboard access, select the text here and copy it by hand.</p>
+    <textarea id="out" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<div class="bar"><div class="bar-in">
+  <div class="grow" id="progress"></div>
+  <button class="btn" id="fill" type="button">Use my recommendation for unanswered</button>
+  <button class="btn" id="reset" type="button">Clear</button>
+  <button class="btn primary" id="copy" type="button">Copy all answers</button>
+</div></div>
+
+<script>
+'use strict';
+
+var ICON = function (n) { return '<svg><use href="#i-' + n + '"/></svg>'; };
+var COMP_NOTE = ' <span style="color:#6e7681">(from memory, not re-checked today)</span>';
+
+var QUESTIONS = [
+  {
+    id: 'q1', title: 'Front-end stack', kind: 'single',
+    ctx: 'The proposal says "rewrite". The question is how far the rewrite goes underneath the new look. Every option keeps the constraints above (jar-served, CSP, nothing from other hosts) except D, which adds Node to the build.',
+    rec: 'A. It removes both end-of-life frameworks, needs no build tooling, is safe under the current CSP (htm parses templates without <code>eval</code>), and escapes data by default, which protects the "no HTML built from data" rule the project already enforces. The whole vendor folder shrinks from 11 packages to 2 or 3.',
+    comp: 'Sidekiq 7: vanilla JS, jQuery removed. GoodJob: Bootstrap 5 + Stimulus, vendored, no Node build. Hangfire: server-rendered pages + jQuery + Bootstrap. JobRunr and db-scheduler-ui: React SPA built with Node. Spring Boot Admin: Vue 3 SPA built with Vite.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 52, rec: true, name: 'Preact + htm, no build step',
+        desc: 'One vendored ES-module file (about 13 KB) gives components, state and hooks. Plain <code>.js</code> modules, no compiler. Router, toasts, dialog and relative times written in-house (about 200 lines, using <code>&lt;dialog&gt;</code> and <code>Intl</code>). Replaces AngularJS, jQuery, Bootstrap JS, Moment, Toaster, Bootstrap Toggle and js-cookie.',
+        risk: ['med', 'Medium: every page is rewritten, so behaviour (CSRF header, refresh loop, deep links) must be re-verified'], cost: ['med', 'Medium-high'], cx: ['med', 'Medium']},
+      {k: 'B', w: 22, name: 'Vanilla JS modules, no framework at all',
+        desc: 'Zero dependencies besides the chart library. Rendering, re-rendering on refresh and escaping are all hand-written.',
+        risk: ['high', 'Medium-high: hand-built DOM makes it easy to reintroduce HTML-from-data bugs; focus and scroll are lost on coarse re-renders'], cost: ['high', 'High'], cx: ['high', 'Medium-high']},
+      {k: 'C', w: 16, name: 'Keep AngularJS 1.8, replace only the CSS and add charts',
+        desc: 'Templates and controllers stay; Bootstrap 3 and Bootswatch are replaced by a new stylesheet; jQuery stays because the controllers use it.',
+        risk: ['high', 'Low now, high later: AngularJS stays in the jar with CVEs that will never be fixed, and dependency scanners at host companies flag it'], cost: ['low', 'Low-medium'], cx: ['low', 'Low']},
+      {k: 'D', w: 10, name: 'React or Vue SPA with a Vite build (frontend-maven-plugin)',
+        desc: 'Full modern toolchain, component libraries available. Maven downloads Node and runs an npm build; the jar ships the bundle.',
+        risk: ['med', 'Medium: build and CI now depend on Node and a large npm tree; contributors need both toolchains'], cost: ['high', 'High'], cx: ['high', 'High']}
+    ]
+  },
+  {
+    id: 'q2', title: 'Visual style', kind: 'single', figure: 'styles',
+    ctx: 'Four directions, each drawn with the same proposed Dashboard so they compare like for like. Use the Light / Dark buttons to see both themes. All four are built on the same CSS variables, so the cost is the same and a later switch is cheap; this is mostly taste.',
+    rec: 'A. Calm neutral surfaces with a single accent keep the status colours (running, paused, failed) as the loudest thing on screen, which is what an operations page needs. B is the better pick if you expect dozens of triggers on screen at once.',
+    comp: 'A is close to JobRunr / GitHub / Linear. B is close to Grafana and Temporal. C is close to Material-style consumer dashboards. D keeps the look of the current UI (and of Hangfire).' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 48, rec: true, name: 'Slate Console', mock: 'a',
+        desc: 'Left sidebar with icons and labels, neutral greys, one indigo accent, 8 px corners.',
+        risk: ['low', 'Low'], cost: ['med', 'Same for all four'], cx: ['low', 'Low']},
+      {k: 'B', w: 22, name: 'Dense Ops', mock: 'b',
+        desc: 'Top tab navigation, compact rows, monospaced numbers, square corners, borders instead of shadows. Most data per screen.',
+        risk: ['low', 'Low; smaller text is harder on low-resolution screens'], cost: ['med', 'Same'], cx: ['low', 'Low']},
+      {k: 'C', w: 12, name: 'Soft Cards', mock: 'c',
+        desc: 'Icon-only rail, large rounded cards with shadows, violet accent, roomier spacing. Friendliest, least dense.',
+        risk: ['low', 'Low; icon-only navigation relies on tooltips'], cost: ['med', 'Same'], cx: ['low', 'Low']},
+      {k: 'D', w: 18, name: 'Navy Classic', mock: 'd',
+        desc: 'Keeps today\'s identity: navy top bar, grey sidebar, striped tables &mdash; cleaned up and on the new components. Least surprise for current users.',
+        risk: ['low', 'Low; looks the least "new"'], cost: ['med', 'Same'], cx: ['low', 'Low']}
+    ]
+  },
+  {
+    id: 'q3', title: 'Navigation and page structure', kind: 'single', figure: 'nav',
+    ctx: 'Today the UI opens on "Scheduler info", a table of class names. The first screen should answer "is everything running, and what failed?".',
+    rec: 'A. A Dashboard as the landing page, and the three rarely-opened reference pages (scheduler info, configuration, metrics) folded into where they are used. Per-job counters and durations move into the Jobs table; scheduler info and configuration become two tabs of one System page.',
+    comp: 'Hangfire: Dashboard / Jobs / Retries / Recurring / Servers. JobRunr: Dashboard / Jobs / Recurring Jobs / Servers. Sidekiq: Dashboard / Busy / Queues / Retries / Scheduled / Dead. All open on a dashboard with graphs.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 58, rec: true, name: 'Dashboard + consolidated sections (6 entries)',
+        desc: 'Dashboard &middot; Triggers &middot; Jobs (with metrics columns) &middot; Executions &middot; Cluster (only when clustered) &middot; System (Scheduler | Configuration tabs). Old deep links such as <code>#/logs</code> and <code>#/metrics</code> redirect.',
+        risk: ['low', 'Low-medium: people who use Metrics or Configuration must find the new place'], cost: ['med', 'Medium'], cx: ['med', 'Medium']},
+      {k: 'B', w: 30, name: 'Add a Dashboard, keep all seven pages as they are (8 entries)',
+        desc: 'Nothing moves; the Dashboard is simply a new first entry.',
+        risk: ['low', 'Low'], cost: ['med', 'Medium'], cx: ['low', 'Low']},
+      {k: 'C', w: 12, name: 'No Dashboard; charts go onto the existing pages',
+        desc: 'Seven pages restyled; an executions chart on Execution logs, bars on Instance metrics.',
+        risk: ['low', 'Low; the landing page stays a table of class names'], cost: ['low', 'Low-medium'], cx: ['low', 'Low']}
+    ]
+  },
+  {
+    id: 'q4', title: 'Dashboard widgets and charts', kind: 'multi',
+    ctx: 'Tick everything you want in this proposal. The percentage is how confident I am that the item earns its place. Items B, D, G and H need the data decision in Q5.',
+    rec: 'A, B, C, D, E, F now. G and I are cheap follow-ups once the data endpoint exists. H (timeline) is the most work and worth its own proposal.',
+    comp: 'Hangfire and Sidekiq: a realtime graph plus a history graph of succeeded / failed. JobRunr: counters per state, estimated processing time, and a problems panel for failures.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 95, rec: true, name: 'KPI tiles', desc: 'Triggers by state, executions in the selected range, success rate, failures, average duration, nodes checked in.'},
+      {k: 'B', w: 92, rec: true, name: 'Executions over time', desc: 'Stacked bars, success and failure, with a 1 h / 24 h / 7 d range switch.'},
+      {k: 'C', w: 76, rec: true, name: 'Trigger state breakdown', desc: 'One segmented bar (normal / paused / blocked / error / complete) with counts; each segment links to the filtered Triggers list.'},
+      {k: 'D', w: 74, rec: true, name: 'Duration trend per job', desc: 'Average and maximum duration as lines, on the trigger and job detail pages.'},
+      {k: 'E', w: 90, rec: true, name: 'Recent failures', desc: 'Last five failed executions with message and time, each linking to its log.'},
+      {k: 'F', w: 78, rec: true, name: 'Upcoming fires', desc: 'The next ten triggers due, with a countdown. Uses data the API already returns.'},
+      {k: 'G', w: 58, name: 'Sparkline per job in the Jobs table', desc: 'A small success / failure history next to each job.'},
+      {k: 'H', w: 34, name: 'Execution timeline', desc: 'Lanes per job with one bar per execution (start and duration): shows overlaps and long runs. The README already promises a "Timeline" page that the UI does not have.'},
+      {k: 'I', w: 55, name: 'Cluster health strip', desc: 'One dot per node on the Dashboard, coloured by how recent its last check-in is.'}
+    ]
+  },
+  {
+    id: 'q5', title: 'Where chart data comes from', kind: 'single',
+    ctx: 'This is the one backend decision. The execution log table already has what is needed (<code>createTime</code>, indexed; <code>success</code>; <code>duration</code>), but the API only exposes it as paged rows.',
+    rec: 'A. One read-only endpoint, aggregated on the server, so numbers are correct for the whole cluster and survive restarts. I would add the method to <code>JobExecutionLogService</code> as a <code>default</code> method so hosts with their own implementation keep compiling, and cap the range at the cleanup job\'s retention (30 days by default).',
+    comp: 'Hangfire and Sidekiq keep aggregated counters per hour and day in storage and serve them to the dashboard. JobRunr computes job statistics on the server and pushes them to the page.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 64, rec: true, name: 'New endpoint <code>GET {api-uri}/stats</code>, aggregated from the execution log',
+        desc: 'Returns time buckets (count of successes and failures, average and maximum duration), optionally per job. JDBC implementation uses a portable query for H2, MySQL and PostgreSQL; the in-memory implementation loops over its list. No schema change.',
+        risk: ['med', 'Low-medium: query cost on very large log tables (mitigated by the existing index and a capped range)'], cost: ['med', 'Medium: service method, two implementations, endpoint, tests, README'], cx: ['med', 'Medium']},
+      {k: 'B', w: 20, name: 'Aggregate in the browser from the existing <code>/log</code> pages',
+        desc: 'No backend change; the UI fetches the latest few hundred rows and buckets them.',
+        risk: ['high', 'High on busy schedulers: a few hundred rows may cover only minutes, so the chart is silently incomplete; every refresh downloads all stack traces'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'C', w: 16, name: 'Live-only: sample the <code>/metrics</code> counters while the page is open',
+        desc: 'No backend change; the chart starts empty and shows what happened since the page was opened, for the one instance that answers.',
+        risk: ['med', 'Medium: no history, and in a cluster each refresh may hit a different node'], cost: ['low', 'Low'], cx: ['low', 'Low']}
+    ]
+  },
+  {
+    id: 'q6', title: 'Chart library', kind: 'single',
+    ctx: 'Needed chart types: stacked time bars, a line chart, a segmented bar and (optionally) sparklines. Whatever is chosen is vendored like the other libraries, with its integrity hash recorded.',
+    rec: 'A, with the tiny pieces (segmented bar, sparklines) as plain inline SVG rather than one canvas per table row. Chart.js is the best-known option, well documented, and what comparable dashboards use; the jar still ends up smaller than today.',
+    comp: 'Hangfire, Sidekiq 7 and GoodJob use Chart.js. XXL-JOB uses ECharts. Grafana uses uPlot for time series.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 50, rec: true, name: 'Chart.js 4', desc: 'MIT, about 200 KB minified, canvas. Tooltips, legends, time axes and animation come ready-made. Colours are read from the CSS variables and re-applied on theme change.',
+        risk: ['low', 'Low'], cost: ['low', 'Low-medium'], cx: ['low', 'Low']},
+      {k: 'B', w: 28, name: 'Hand-written SVG chart components', desc: 'No dependency; themed by CSS automatically; accessible to screen readers. Axes, tooltips and resizing are written and maintained here (about 300 to 400 lines).',
+        risk: ['med', 'Medium: custom chart code to maintain; edge cases (empty data, huge values) are ours'], cost: ['med', 'Medium'], cx: ['med', 'Medium']},
+      {k: 'C', w: 14, name: 'uPlot', desc: 'MIT, about 50 KB, very fast time series on canvas. No segmented or pie-type charts; thinner documentation.',
+        risk: ['med', 'Medium'], cost: ['med', 'Medium'], cx: ['med', 'Medium']},
+      {k: 'D', w: 8, name: 'Apache ECharts', desc: 'Apache-2.0, about 1 MB for the full build (a smaller custom build needs Node). Every chart type imaginable, including timelines.',
+        risk: ['low', 'Low; heavy for four charts'], cost: ['med', 'Medium'], cx: ['med', 'Medium']}
+    ]
+  },
+  {
+    id: 'q7', title: 'Icons', kind: 'single',
+    ctx: 'Today: Glyphicons, the icon font bundled with Bootstrap 3. The proposal asks for easy-to-understand icons where they help; I would pair every icon with a text label or tooltip rather than rely on icons alone.',
+    rec: 'A. Outline icons that take the text colour, shipped as one same-origin SVG file containing only the icons actually used (about 35).',
+    comp: 'JobRunr: Material icons. Spring Boot Admin: Font Awesome. GoodJob: Bootstrap Icons. Grafana: its own set based on Unicons.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 60, rec: true, name: 'Lucide (ISC licence), subset as one SVG sprite', desc: 'About 15 KB for the subset. Consistent 2 px outline style; the icons in the mockups on this page are drawn in that style.', risk: ['low', 'Low'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'B', w: 22, name: 'Bootstrap Icons (MIT), subset as one SVG sprite', desc: 'Has both outline and filled variants; slightly heavier strokes.', risk: ['low', 'Low'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'C', w: 10, name: 'Another outline set (Tabler, Heroicons or Phosphor)', desc: 'Same approach, different drawing style. Name the set in the note.', risk: ['low', 'Low'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'D', w: 8, name: 'Keep Glyphicons', desc: 'Only possible if Bootstrap 3\'s font files stay in the jar; dated look and a small set.', risk: ['low', 'Low'], cost: ['low', 'None'], cx: ['low', 'Low']}
+    ]
+  },
+  {
+    id: 'q8', title: 'Theme switch: device (default), light, dark', kind: 'single', figure: 'theme',
+    ctx: 'The three modes are required by the proposal; this is only about the control. In every option: "device" follows the operating system and reacts live when it changes; the choice is kept in <code>localStorage</code> under the existing key <code>quartz-plus.theme</code>, so a stored "light" or "dark" from 1.0.4 keeps working; the theme is applied before first paint; charts re-colour with it.',
+    rec: 'A. All three states are visible at once, so nobody has to click to find out what "device" means or which mode is active.',
+    comp: 'GitHub and Grafana: Light / Dark / System as a preference. MDN and the Tailwind docs: a three-item theme menu in the header.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 62, rec: true, name: 'Three-segment control in the header', desc: 'Monitor / sun / moon, each with a tooltip; the active one is highlighted.', risk: ['low', 'Low'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'B', w: 23, name: 'One button that cycles device &rarr; light &rarr; dark', desc: 'Smallest footprint; the current mode is only visible from the icon.', risk: ['low', 'Low; less discoverable'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'C', w: 15, name: 'Inside a settings menu', desc: 'A gear button opens a small menu holding theme and refresh interval together.', risk: ['low', 'Low; one more click'], cost: ['low', 'Low'], cx: ['low', 'Low-medium']}
+    ]
+  },
+  {
+    id: 'q9', title: 'UX improvements in scope', kind: 'multi', figure: 'triggers',
+    ctx: 'Tick what should be part of this proposal. Items D and E need small additions to the REST API (optional query parameters, one read-only endpoint).',
+    rec: 'A, B, C, D, F and G. E is valuable but depends on how much API you want to add now. H, I and J can wait for real demand.',
+    comp: 'Hangfire and JobRunr: row checkboxes with bulk requeue / delete, state tabs with counts. Sidekiq: live-poll toggle with interval. Temporal: filter chips and saved filters.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 90, rec: true, name: 'Triggers: search, state filter chips, sortable columns', desc: 'All client-side on data already loaded.'},
+      {k: 'B', w: 85, rec: true, name: 'Row actions on the Triggers list', desc: 'Pause, resume and run-now without opening the details page; a styled confirmation dialog replaces the browser\'s <code>confirm()</code> for remove.'},
+      {k: 'C', w: 82, rec: true, name: 'Refresh control', desc: 'Interval picker (off / 5 s / 10 s / 30 s / 60 s), a refresh-now button, "updated 4 s ago", and no polling while the tab is hidden. Today: a fixed 10 s on / off toggle.'},
+      {k: 'D', w: 75, rec: true, name: 'Executions: filter by result and time range, on the server', desc: 'Two optional parameters on <code>GET {api-uri}/log</code>. Today the text box filters only the rows of the current page.'},
+      {k: 'E', w: 62, name: 'Cron in words plus the next five fire times', desc: '"At 02:00 every day (UTC)" on trigger details. The fire times come from Quartz itself through one small read-only endpoint; the wording would need a small vendored library or a hand-written describer.'},
+      {k: 'F', w: 70, rec: true, name: 'Responsive layout', desc: 'Usable on a tablet or phone: the sidebar collapses, tables scroll or stack.'},
+      {k: 'G', w: 68, rec: true, name: 'Better execution detail page', desc: 'Result, duration and time as a header; copy buttons and a wrap toggle on the output and job data; 24-hour timestamps.'},
+      {k: 'H', w: 34, name: 'Bulk actions', desc: 'Select several triggers, then pause or resume them together.'},
+      {k: 'I', w: 30, name: 'Create-job form', desc: 'A form for the existing <code>PUT {api-uri}/create</code>, shown only when <code>api.create-enabled</code> is true.'},
+      {k: 'J', w: 15, name: 'Keyboard shortcuts / command palette', desc: 'Jump to a page or a trigger by typing.'}
+    ]
+  },
+  {
+    id: 'q10', title: 'Rollout', kind: 'single',
+    ctx: 'How hosts get the new UI. In every option the URL (<code>quartz-plus.web-admin.uri</code>) and all existing settings stay as they are.',
+    rec: 'A. The UI is not an API that hosts program against, so there is nothing for them to migrate; keeping the old one around means AngularJS and Bootstrap 3 stay in the jar and both UIs must be kept secure.',
+    comp: 'Hangfire, Sidekiq and JobRunr replace their dashboard in place between versions; none ship an old and a new one together.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 66, rec: true, name: 'Replace the current UI in the next release', desc: 'Old templates, scripts and the vendored libraries no longer needed are deleted.', risk: ['med', 'Low-medium: a regression has no fallback except pinning the previous version'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'B', w: 24, name: 'Ship both for one release, switchable by a property', desc: '<code>quartz-plus.web-admin.ui: modern | classic</code>, default modern; classic removed one release later.', risk: ['low', 'Low for regressions; scanners keep flagging AngularJS'], cost: ['med', 'Medium: two UIs, about 1 MB extra in the jar, filter and tests cover both'], cx: ['med', 'Medium']},
+      {k: 'C', w: 10, name: 'New UI as a preview at a second path, old stays default', desc: 'For example <code>{web-admin.uri}/next</code>.', risk: ['low', 'Low'], cost: ['med', 'Medium'], cx: ['med', 'Medium']}
+    ]
+  },
+  {
+    id: 'q11', title: 'Project version', kind: 'single',
+    ctx: '<code>pom.xml</code> is at <code>1.0.4</code>, and <code>CHANGES.md</code> already has a 1.0.4 section (dated 2026-10-25) holding the dark theme and refresh-toggle changes. A new UI is a major feature, so the version should move before the changelog entries are written.',
+    rec: 'A, lightly. A rewritten UI (and possibly a new endpoint) is a feature release, and a minor bump tells hosts to look at the release notes. B is just as defensible: every release so far, including ones with new settings, has been a patch bump.',
+    comp: null,
+    options: [
+      {k: 'A', w: 55, rec: true, name: '1.1.0', desc: 'New minor version for the new UI.', risk: ['low', 'Low'], cost: ['low', 'None'], cx: ['low', 'Low']},
+      {k: 'B', w: 38, name: '1.0.5', desc: 'Continue the patch sequence used so far.', risk: ['low', 'Low'], cost: ['low', 'None'], cx: ['low', 'Low']},
+      {k: 'C', w: 7, name: 'Stay on 1.0.4', desc: 'Only if 1.0.4 has not been released yet.', risk: ['low', 'Low'], cost: ['low', 'None'], cx: ['low', 'Low']}
+    ]
+  },
+  {
+    id: 'q12', title: 'Delivery', kind: 'single',
+    ctx: 'How the work is cut, and when you get to look at it.',
+    rec: 'A. The first checkpoint is where taste matters most (does the chosen style feel right on real pages?) and it is cheap to adjust there, before the charts are built on top.',
+    comp: null,
+    options: [
+      {k: 'A', w: 60, rec: true, name: 'One proposal, two checkpoints', desc: '1) New shell, design tokens, theme modes and every existing page at parity &mdash; you review it running. 2) Data endpoint, Dashboard, charts and the ticked improvements.', risk: ['low', 'Low'], cost: ['low', 'One extra review round'], cx: ['low', 'Low']},
+      {k: 'B', w: 25, name: 'One pass, review at the end', desc: 'Fastest if the answers here already settle everything.', risk: ['med', 'Medium: style changes after the fact touch more files'], cost: ['low', 'Lowest'], cx: ['low', 'Low']},
+      {k: 'C', w: 15, name: 'Split into two proposals', desc: '#8 becomes the rewrite at parity and is released on its own; Dashboard, charts and the API addition become a new proposal.', risk: ['low', 'Low'], cost: ['med', 'Two release cycles'], cx: ['low', 'Low']}
+    ]
+  },
+  {
+    id: 'q13', title: 'Testing the UI', kind: 'single',
+    ctx: 'Today the UI is covered from Java: <code>WebAdminConfigurationTest</code> checks that <code>index.html</code> loads only its own files and that each is served with the right type and headers. There is no JavaScript test tooling in the build.',
+    rec: 'A. Keep the Java tests (extended to the new files and, if chosen, the stats endpoint on H2) and have me walk every page in a real browser against the test application, in light and dark, with the console open for errors and CSP violations. Browser automation in the Maven build is a lot of weight for a UI of this size.',
+    comp: 'JobRunr and Spring Boot Admin run front-end unit tests through their Node build. Hangfire and Sidekiq test dashboard pages on the server side only.' + COMP_NOTE,
+    options: [
+      {k: 'A', w: 62, rec: true, name: 'No new tooling', desc: 'Java integration tests for served files, headers and the API; a manual browser walk-through with a written checklist.', risk: ['med', 'Medium: UI regressions are caught by eye, not by CI'], cost: ['low', 'Low'], cx: ['low', 'Low']},
+      {k: 'B', w: 26, name: 'Add Playwright for Java (test scope) smoke tests', desc: 'A headless browser opens each page and fails on console errors or CSP violations.', risk: ['low', 'Low for regressions'], cost: ['high', 'High: new test dependency, CI downloads a browser, slower build'], cx: ['med', 'Medium']},
+      {k: 'C', w: 12, name: 'HtmlUnit smoke tests', desc: 'Lightweight and pure Java, but its JavaScript engine lags behind browsers on ES modules and modern syntax.', risk: ['high', 'High: likely flaky or unable to run the UI'], cost: ['med', 'Medium'], cx: ['med', 'Medium']}
+    ]
+  }
+];
+
+/* ------------------------------------------------------------------ mockups */
+var OK = [12,14,11,9,8,7,9,13,22,31,36,34,29,33,38,35,30,27,24,21,19,17,15,13];
+var FL = [0,1,0,0,0,0,0,0,1,2,6,1,0,1,2,0,0,3,0,0,1,0,0,0];
+var NAV = [['dash','Dashboard',1],['clock','Triggers'],['jobs','Jobs'],['list','Executions'],['server','Cluster'],['gear','System']];
+
+function bars() {
+  var h = '';
+  for (var i = 0; i < OK.length; i++) {
+    h += '<div>' + (FL[i] ? '<i class="f" style="height:' + (FL[i] / 44 * 100) + '%"></i>' : '') + '<i style="height:' + (OK[i] / 44 * 100) + '%"></i></div>';
+  }
+  return h;
+}
+function topBar() {
+  return '<div class="mk-top"><span class="mk-logo"><i></i>Quartz Plus</span><span class="mk-sp"></span>'
+    + '<span class="mk-pill">' + ICON('refresh') + '10 s</span>'
+    + '<span class="mk-seg"><span class="on">' + ICON('monitor') + '</span><span>' + ICON('sun') + '</span><span>' + ICON('moon') + '</span></span></div>';
+}
+function navBar(active) {
+  return '<nav class="mk-nav">' + NAV.map(function (n) {
+    return '<a class="' + (n[1] === active ? 'on' : '') + '">' + ICON(n[0]) + '<span>' + n[1] + '</span></a>';
+  }).join('') + '</nav>';
+}
+function row(g, t, st, c, next, last, lastOk) {
+  return '<tr><td>' + g + '</td><td><b>' + t + '</b></td><td><span class="st" style="--c:var(--' + c + ')">' + st + '</span></td>'
+    + '<td class="n">' + next + '</td><td class="n" style="color:var(--' + (lastOk ? 'ok' : 'fail') + ')">' + last + '</td>'
+    + '<td><span class="act">' + ICON(st === 'Paused' ? 'play' : 'pause') + ICON('zap') + '</span></td></tr>';
+}
+function styleMock(s, theme) {
+  return '<div class="mk" data-style="' + s + '" data-theme="' + theme + '">' + topBar() + '<div class="mk-body">' + navBar('Dashboard')
+    + '<div class="mk-main">'
+    + '<div class="mk-h">Dashboard <small>scheduler "orders" &middot; 3 nodes &middot; running 12 days</small></div>'
+    + '<div class="mk-kpis">'
+    + kpi('clock', 'Triggers', '42', '38 normal &middot; 3 paused', '')
+    + kpi('list', 'Executions (24 h)', '1,284', '+6% vs. previous day', 'up')
+    + kpi('check', 'Success rate', '98.6%', '18 failures', '')
+    + kpi('zap', 'Avg duration', '412 ms', 'max 9.3 s', '')
+    + '</div><div class="mk-row">'
+    + '<div class="mk-panel"><div class="mk-pt">Executions<span class="mk-leg"><span style="--c:var(--a)">success</span><span style="--c:var(--fail)">failure</span></span>'
+    + '<span class="mk-seg"><span>1 h</span><span class="on">24 h</span><span>7 d</span></span></div>'
+    + '<div class="mk-bars">' + bars() + '</div><div class="mk-ax"><span>14:00</span><span>20:00</span><span>02:00</span><span>08:00</span><span>now</span></div></div>'
+    + '<div class="mk-panel"><div class="mk-pt">Trigger states</div>'
+    + '<div class="mk-states"><i style="flex:38;--c:var(--a)"></i><i style="flex:3;--c:var(--warn)"></i><i style="flex:1;--c:var(--fail)"></i></div>'
+    + '<div class="mk-leg"><span style="--c:var(--a)">38 normal</span><span style="--c:var(--warn)">3 paused</span><span style="--c:var(--fail)">1 error</span></div>'
+    + '<div class="mk-fail" style="margin-top:10px">' + ICON('alert') + 'InvoiceExportJob<span>4 min ago</span></div>'
+    + '<div class="mk-fail" style="margin-top:0">' + ICON('alert') + 'SyncCustomersJob<span>1 h ago</span></div></div>'
+    + '</div><div class="mk-panel"><div class="mk-pt">Next to fire</div><table><thead><tr><th>Group</th><th>Trigger</th><th>State</th><th>Next fire</th><th>Last run</th><th></th></tr></thead><tbody>'
+    + row('billing', 'InvoiceExportTrigger', 'Normal', 'a', 'in 40 s', 'failed 4 min ago', false)
+    + row('crm', 'SyncCustomersTrigger', 'Normal', 'a', 'in 3 min', 'ok &middot; 1.2 s', true)
+    + row('reports', 'NightlyReportTrigger', 'Paused', 'warn', '&mdash;', 'ok &middot; 9.3 s', true)
+    + '</tbody></table></div></div></div></div>';
+}
+function kpi(ic, l, v, d, cls) {
+  return '<div class="mk-panel mk-kpi"><div class="l"><span class="mk-kico">' + ICON(ic) + '</span>' + l + '</div><div class="v">' + v + '</div><div class="d ' + cls + '">' + d + '</div></div>';
+}
+function triggersMock() {
+  return '<div class="mk" data-style="a" data-theme="dark">' + topBar() + '<div class="mk-body">' + navBar('Triggers') + '<div class="mk-main">'
+    + '<div class="mk-h">Triggers <small>42 total &middot; updated 4 s ago</small></div>'
+    + '<div class="mk-tools"><span class="mk-search">' + ICON('search') + 'Search group, trigger or job</span>'
+    + '<span class="mk-chip on">All 42</span><span class="mk-chip">Normal 38</span><span class="mk-chip">Paused 3</span><span class="mk-chip">Error 1</span>'
+    + '<span class="mk-sp"></span><span class="mk-pill">' + ICON('refresh') + 'Every 10 s &#9662;</span></div>'
+    + '<div class="mk-panel"><table><thead><tr><th>Group</th><th>Trigger &#9652;</th><th>State</th><th>Next fire</th><th>Last run</th><th>Actions</th></tr></thead><tbody>'
+    + row('billing', 'InvoiceExportTrigger', 'Error', 'fail', '&mdash;', 'failed 4 min ago', false)
+    + row('crm', 'SyncCustomersTrigger', 'Normal', 'a', 'in 3 min', 'ok &middot; 1.2 s', true)
+    + row('internal', 'ExecutionLogCleanupTrigger', 'Normal', 'a', 'in 11 h', 'ok &middot; 84 ms', true)
+    + row('reports', 'NightlyReportTrigger', 'Paused', 'warn', '&mdash;', 'ok &middot; 9.3 s', true)
+    + '</tbody></table></div></div></div></div>';
+}
+function navMock(items) {
+  return '<div class="navmock">' + items.map(function (n) {
+    return '<div class="' + (n[2] || '') + '">' + (n[0] ? ICON(n[0]) : '') + n[1] + '</div>';
+  }).join('') + '</div>';
+}
+var FIGURES = {
+  nav: function () {
+    return '<div class="fig"><div class="fig-cap">Sidebar in each option</div><div class="fig-grid">'
+      + '<div class="fig-col"><h4>A &middot; consolidated</h4>' + navMock([['dash','Dashboard','on new'],['clock','Triggers'],['jobs','Jobs'],[null,'+ success / failure / duration columns','sub'],['list','Executions'],['server','Cluster'],['gear','System'],[null,'Scheduler | Configuration','sub']]) + '</div>'
+      + '<div class="fig-col"><h4>B &middot; dashboard added</h4>' + navMock([['dash','Dashboard','on new'],['gear','Scheduler info'],['gear','Configuration'],['clock','Triggers'],['jobs','Job classes'],['list','Execution logs'],['server','Cluster nodes'],['zap','Instance metrics']]) + '</div>'
+      + '<div class="fig-col"><h4>C &middot; as today</h4>' + navMock([['gear','Scheduler info','on'],['gear','Configuration'],['clock','Triggers'],['jobs','Job classes'],['list','Execution logs'],['server','Cluster nodes'],['zap','Instance metrics']]) + '</div>'
+      + '</div></div>';
+  },
+  theme: function () {
+    return '<div class="fig"><div class="fig-cap">The control in each option</div><div class="fig-grid">'
+      + '<div class="fig-col"><h4>A &middot; three segments</h4><div class="themock"><span class="seg"><span class="on" title="Device">' + ICON('monitor') + '</span><span title="Light">' + ICON('sun') + '</span><span title="Dark">' + ICON('moon') + '</span></span></div></div>'
+      + '<div class="fig-col"><h4>B &middot; cycling button</h4><div class="themock"><span class="ib">' + ICON('monitor') + '</span>&rarr;<span class="ib">' + ICON('sun') + '</span>&rarr;<span class="ib">' + ICON('moon') + '</span></div></div>'
+      + '<div class="fig-col"><h4>C &middot; settings menu</h4><div class="themock"><span class="ib">' + ICON('gear') + '</span><span class="menu"><div class="on">' + ICON('monitor') + 'Device</div><div>' + ICON('sun') + 'Light</div><div>' + ICON('moon') + 'Dark</div></span></div></div>'
+      + '</div></div>';
+  },
+  triggers: function () {
+    return '<div class="fig"><div class="fig-cap">Triggers page with items A, B and C (drawn in style A, dark)</div>' + triggersMock() + '</div>';
+  },
+  styles: function () {
+    return '<div class="stylebar">Preview all four in: <button type="button" class="btn small on" data-all-theme="dark">Dark</button><button type="button" class="btn small" data-all-theme="light">Light</button></div>';
+  }
+};
+
+/* ------------------------------------------------------------------ page */
+var STORE = 'quartz-plus.proposal-8.answers';
+var state = {};
+try { state = JSON.parse(window.localStorage.getItem(STORE) || '{}') || {}; } catch (e) { state = {}; }
+function save() { try { window.localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) { /* not persisted */ } }
+function ans(id) { if (!state[id]) { state[id] = {pick: [], other: '', note: ''}; } return state[id]; }
+function strip(html) { var d = document.createElement('div'); d.innerHTML = html; return d.textContent; }
+function chip(label, v) { return '<span class="chip ' + v[0] + '"><b>' + label + '</b>' + v[1] + '</span>'; }
+
+function renderQuestion(q, idx) {
+  var multi = q.kind === 'multi';
+  var h = '<section class="q" id="' + q.id + '"><div class="q-head"><span class="q-num">Q' + (idx + 1) + '</span><h2>' + q.title + '</h2>'
+    + '<span class="q-kind">' + (multi ? 'tick any number' : 'pick one') + '</span></div>'
+    + '<p class="q-ctx">' + q.ctx + '</p>'
+    + '<div class="recbox"><b>Recommendation:</b> ' + q.rec + '</div>'
+    + (q.comp ? '<div class="compbox"><b>What others do:</b> ' + q.comp + '</div>' : '')
+    + (q.figure ? FIGURES[q.figure]() : '') + '<div class="opts">';
+  q.options.forEach(function (o) {
+    h += '<label class="opt" data-q="' + q.id + '" data-k="' + o.k + '"><input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + q.id + '" value="' + o.k + '">'
+      + '<div class="o-top"><span class="o-key">' + o.k + '</span><span class="o-name">' + o.name + '</span>'
+      + (o.rec ? '<span class="o-badge">' + (multi ? 'Include' : 'Recommended') + '</span>' : (multi ? '<span class="o-later">Later</span>' : ''))
+      + '<span class="o-w"><span class="o-wbar"><i style="width:' + o.w + '%"></i></span>' + o.w + '%</span></div>'
+      + '<div class="o-desc">' + o.desc + '</div>'
+      + (o.risk ? '<div class="o-meta">' + chip('Risk', o.risk) + chip('Cost', o.cost) + chip('Complexity', o.cx) + '</div>' : '')
+      + (o.mock ? '<div class="mkwrap"><div class="mkbar">Theme: <button type="button" class="btn small on" data-mk-theme="dark">Dark</button><button type="button" class="btn small" data-mk-theme="light">Light</button></div>' + styleMock(o.mock, 'dark') + '</div>' : '')
+      + '</label>';
+  });
+  h += '<label class="opt" data-q="' + q.id + '" data-k="Other"><input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + q.id + '" value="Other">'
+    + '<div class="o-top"><span class="o-key">?</span><span class="o-name">Other</span></div>'
+    + '<div class="other-row"><input type="text" data-other="' + q.id + '" placeholder="Describe what you want instead"></div></label>'
+    + '</div><div class="note"><label for="note-' + q.id + '">Notes for this question (optional)</label><textarea id="note-' + q.id + '" data-note="' + q.id + '" rows="2"></textarea></div></section>';
+  return h;
+}
+
+function sync() {
+  var answered = 0;
+  QUESTIONS.forEach(function (q, i) {
+    var a = ans(q.id);
+    document.querySelectorAll('.opt[data-q="' + q.id + '"]').forEach(function (el) {
+      var on = a.pick.indexOf(el.getAttribute('data-k')) >= 0;
+      el.classList.toggle('sel', on);
+      el.querySelector('input').checked = on;
+    });
+    if (a.pick.length) { answered++; }
+    document.querySelector('#toc a[href="#' + q.id + '"]').classList.toggle('done', a.pick.length > 0);
+  });
+  document.getElementById('progress').textContent = answered + ' of ' + QUESTIONS.length + ' answered';
+  document.getElementById('out').value = output();
+  save();
+}
+
+function output() {
+  var lines = ['Proposal #8 - Improve the UI / UX - answers', ''];
+  QUESTIONS.forEach(function (q, i) {
+    var a = ans(q.id), parts = [];
+    q.options.forEach(function (o) {
+      if (a.pick.indexOf(o.k) >= 0) { parts.push(o.k + ' (' + strip(o.name) + ')'); }
+    });
+    if (a.pick.indexOf('Other') >= 0) { parts.push('Other: ' + (a.other.trim() || '(no text given)')); }
+    lines.push('Q' + (i + 1) + '. ' + q.title + ': ' + (parts.length ? parts.join(q.kind === 'multi' ? '; ' : ', ') : 'NOT ANSWERED'));
+    if (a.note.trim()) { lines.push('    Note: ' + a.note.trim().replace(/\n/g, '\n          ')); }
+  });
+  return lines.join('\n');
+}
+
+document.getElementById('questions').innerHTML = QUESTIONS.map(renderQuestion).join('');
+document.getElementById('toc').innerHTML = QUESTIONS.map(function (q, i) {
+  return '<a href="#' + q.id + '">Q' + (i + 1) + ' ' + q.title + '</a>';
+}).join('') + '<a href="#answers">Answers</a>';
+
+QUESTIONS.forEach(function (q) {
+  var a = ans(q.id);
+  document.querySelector('[data-other="' + q.id + '"]').value = a.other;
+  document.querySelector('[data-note="' + q.id + '"]').value = a.note;
+});
+
+document.addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.matches('.opt input[type=radio], .opt input[type=checkbox]')) {
+    var a = ans(t.name);
+    if (t.type === 'radio') {
+      a.pick = [t.value];
+    } else {
+      var i = a.pick.indexOf(t.value);
+      if (t.checked && i < 0) { a.pick.push(t.value); }
+      if (!t.checked && i >= 0) { a.pick.splice(i, 1); }
+    }
+    sync();
+  }
+});
+document.addEventListener('input', function (e) {
+  var t = e.target;
+  if (t.hasAttribute('data-other')) {
+    var id = t.getAttribute('data-other'), a = ans(id), q = QUESTIONS.filter(function (x) { return x.id === id; })[0];
+    a.other = t.value;
+    if (t.value.trim() && a.pick.indexOf('Other') < 0) {
+      if (q.kind === 'multi') { a.pick.push('Other'); } else { a.pick = ['Other']; }
+    }
+    sync();
+  } else if (t.hasAttribute('data-note')) {
+    ans(t.getAttribute('data-note')).note = t.value;
+    sync();
+  }
+});
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b) { return; }
+  if (b.hasAttribute('data-mk-theme')) {
+    e.preventDefault();
+    setTheme(b.closest('.mkwrap'), b.getAttribute('data-mk-theme'));
+  } else if (b.hasAttribute('data-all-theme')) {
+    var theme = b.getAttribute('data-all-theme');
+    document.querySelectorAll('#q2 .mkwrap').forEach(function (w) { setTheme(w, theme); });
+    document.querySelectorAll('[data-all-theme]').forEach(function (x) { x.classList.toggle('on', x === b); });
+  }
+});
+function setTheme(wrap, theme) {
+  wrap.querySelector('.mk').setAttribute('data-theme', theme);
+  wrap.querySelectorAll('[data-mk-theme]').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-mk-theme') === theme); });
+}
+
+document.getElementById('fill').addEventListener('click', function () {
+  QUESTIONS.forEach(function (q) {
+    var a = ans(q.id);
+    if (!a.pick.length) {
+      a.pick = q.options.filter(function (o) { return o.rec; }).map(function (o) { return o.k; });
+    }
+  });
+  sync();
+});
+document.getElementById('reset').addEventListener('click', function () {
+  if (!window.confirm('Clear every answer and note on this page?')) { return; }
+  state = {};
+  document.querySelectorAll('[data-other],[data-note]').forEach(function (x) { x.value = ''; });
+  sync();
+});
+document.getElementById('copy').addEventListener('click', function () {
+  var btn = this, text = output(), out = document.getElementById('out');
+  function done(ok) {
+    btn.textContent = ok ? 'Copied' : 'Select the text above and copy it';
+    setTimeout(function () { btn.textContent = 'Copy all answers'; }, 2500);
+  }
+  function fallback() {
+    out.focus();
+    out.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    if (!ok) { document.getElementById('answers').scrollIntoView(); }
+    done(ok);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+  } else {
+    fallback();
+  }
+});
+
+sync();
+</script>
+</body>
+</html>

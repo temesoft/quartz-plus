@@ -1,6 +1,33 @@
 # Changes
 
-### Version 1.0.4 (2026-10-25 22:50:04)
+### Version 1.0.5 (2026-11-27)
+- Web admin UI rewritten: Preact 11 and htm as plain ES modules, no build step; AngularJS, jQuery, Bootstrap 3, Bootswatch, Moment.js, AngularJS-Toaster, Bootstrap Toggle and js-cookie are removed (about 940 KB of vendored files replaced by about 35 KB); same URL, same settings, same page addresses (`#/logs?...`, `#/trigger/<group>/<trigger>`), so links into the UI keep working
+- Web admin has a new look: left navigation with icons (Lucide, shipped as one same-origin SVG sprite), cards and tables on one set of colour variables for the light and the dark theme
+- Web admin theme switch with three modes in the top bar: device (the default; follows the operating system, also when it changes while the page is open), light and dark; a choice made in 1.0.4 is kept
+- Web admin refresh control: interval (off, 5, 10, 30 or 60 seconds; a 1.0.4 "on" means 10 s), "refresh now", and how long ago the page was updated; no polling while the browser tab is hidden
+- Web admin works on narrow screens: below 900 px the navigation opens from a menu button, tables scroll sideways
+- Web admin times use a 24-hour clock (they were shown with a 12-hour clock and no AM/PM)
+- Web admin trigger details: run-now dialog checks that the job data is a JSON object before sending it; removing a trigger asks in a dialog instead of the browser's `confirm()`; pause, resume and remove act on the trigger's own group (they used the job's group)
+- Web admin passes names to the API URL-encoded, so groups, jobs and triggers with `&`, `#` or spaces work from the UI
+- Web admin shows "Cluster nodes" in the navigation only for a clustered scheduler, from the first page opened (before, only after the Scheduler page had been opened)
+- Web admin execution logs show the duration and, for failures, the message of each run; "run now" executions are marked instead of linking to a trigger that no longer exists
+- Web admin pages that were opened with a filter (e.g. "Executions" of one job) name it and offer to show all
+- Unused web admin timeline template and its CSS removed (no page loaded them)
+- Build copies the whole web admin folder without resource filtering, since its scripts use `${...}` in template strings
+- Web admin Dashboard, the new start page: triggers by state, runs, success rate and mean duration over the last hour, 24 hours or 7 days, a chart of successful and failed runs, the latest failures, the triggers that fire next and the cluster's nodes; the state bar links to the trigger list filtered by state
+- Web admin trigger list: search, filter by state, sortable columns, and pause, resume and run now on each row
+- Web admin trigger details: the cron expression in words (cronstrue), the next five fire times, and a chart of the job's mean and longest duration
+- Web admin execution logs: filter by result and by time on the server (the text filter still searches the page shown), and a Timeline view of the last 15 minutes to 24 hours as bars per job; a click on a bar opens the run
+- Web admin execution details: job data indented when it is JSON, copy and line-wrap buttons on the job data and the output
+- Web admin charts drawn with Chart.js 4.6.2 and cron descriptions with cronstrue 3.51.0, both bundled in the jar
+- API `GET {api-uri}/stats`: runs added up per time bucket (`from`, `to`, `bucketSeconds`, optional `groupName` and `jobName`), at most 31 days and 200 buckets
+- API `GET {api-uri}/log` takes `success`, `from` and `to`; `GET {api-uri}/log/timeline` returns the latest runs of a time window without their job data and output
+- API `GET {api-uri}/trigger/fire-times`: the next fire times of a trigger, skipping times its calendar excludes
+- `JobExecutionLogService` gains `getJobExecutionLogList(..., success, from, to)` and `getJobExecutionStats(...)` as default methods, so a host's own implementation keeps compiling; until it overrides them, the new filters and the statistics are answered `501`
+- In-memory execution log returns its entries newest first and one page at a time (it returned every entry, oldest first, whatever page was asked for)
+- Project version `1.0.5`
+
+### Version 1.0.4 (2026-10-25)
 - Web admin remembers the refresh toggle in the browser's `localStorage` (previously a session cookie that only kept "refresh disabled" until the browser closed); switching it on refreshes the current page right away instead of at the next page change, and only one refresh loop runs at a time; an existing `__autoRefreshToggle` cookie is carried over once
 - Web admin dark theme: a theme button in the top bar switches between light (Bootswatch "spacelab") and dark (Bootswatch "darkly" 3.4.1, vendored without its Google Fonts import), remembered in `localStorage`; without a stored choice the UI follows the system's light or dark setting; `theme.js` applies the theme before the page is painted, so a dark page does not flash light
 - Project version `1.0.4-SNAPSHOT`

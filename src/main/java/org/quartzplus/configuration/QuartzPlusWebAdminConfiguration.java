@@ -63,8 +63,8 @@ public class QuartzPlusWebAdminConfiguration {
     // ".", ".." and hidden files. Encoded characters ("%2e", "%2f") and backslashes never match.
     private static final Pattern WEB_ADMIN_PATH = Pattern.compile("(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+");
     private static final String WEB_ADMIN_RESOURCE_ROOT = ClassUtils.classPackageAsResourcePath(Job.class) + "/webadmin";
-    // everything the UI loads is its own; inline styles are allowed for the pages' style attributes and data: images
-    // for the toaster's icons, scripts are not (AngularJS runs in ng-csp mode, without eval)
+    // everything the UI loads is its own; inline styles and data: images are allowed, scripts are not: the UI's
+    // scripts are its own module files, and its templates are parsed without eval
     private static final String CONTENT_SECURITY_POLICY = "default-src 'self'; style-src 'self' 'unsafe-inline'; "
             + "img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
     private static final String CSRF_META_TAGS_MARKER = "<!-- quartz-plus:csrf-meta-tags -->";
